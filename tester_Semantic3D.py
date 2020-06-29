@@ -9,7 +9,7 @@ import time
 def log_string(out_str, log_out):
     log_out.write(out_str + '\n')
     log_out.flush()
-    print(out_str)
+    print(out_str, flush=True)
 
 
 class ModelTester:

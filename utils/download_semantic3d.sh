@@ -1,4 +1,4 @@
-BASE_DIR=${1-/data/semantic3d/original_data}
+BASE_DIR="/gpfswork/rech/wwk/uqr22pt/data/semantic3d/original_data"
 
 # Training data
 wget -c -N http://semantic3d.net/data/point-clouds/training1/bildstein_station1_xyz_intensity_rgb.7z -P $BASE_DIR
@@ -43,7 +43,6 @@ wget -c -N http://semantic3d.net/data/point-clouds/testing2/sg27_station10_rgb_i
 wget -c -N http://semantic3d.net/data/point-clouds/testing2/sg28_Station2_rgb_intensity-reduced.txt.7z -P $BASE_DIR
 
 
-
 for entry in "$BASE_DIR"/*
 do
   7z x "$entry" -o$(dirname "$entry") -y
@@ -51,7 +50,7 @@ done
 
 mv $BASE_DIR/station1_xyz_intensity_rgb.txt $BASE_DIR/neugasse_station1_xyz_intensity_rgb.txt
 
-for entry in "$BASE_DIR"/*.7z
-do
-  rm "$entry"
-done
+# for entry in "$BASE_DIR"/*.7z
+# do
+#   rm "$entry"
+# done

@@ -12,8 +12,8 @@ sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, 'utils'))
 
 import cpp_wrappers.cpp_subsampling.grid_subsampling as cpp_subsampling
-import nearest_neighbors.lib.python.nearest_neighbors as nearest_neighbors
-
+# import nearest_neighbors.lib.python.nearest_neighbors as nearest_neighbors
+import nearest_neighbors
 
 class ConfigSemanticKITTI:
     k_n = 16  # KNN
@@ -27,9 +27,11 @@ class ConfigSemanticKITTI:
     train_steps = 500  # Number of steps per epochs
     val_steps = 100  # Number of validation steps per epoch
 
-    sub_sampling_ratio = [4, 4, 4, 4]  # sampling ratio of random sampling at each layer
+    # sampling ratio of random sampling at each layer
+    sub_sampling_ratio = [4, 4, 4, 4]
     d_out = [16, 64, 128, 256]  # feature dimension
-    num_sub_points = [num_points // 4, num_points // 16, num_points // 64, num_points // 256]
+    num_sub_points = [num_points // 4, num_points //
+                      16, num_points // 64, num_points // 256]
 
     noise_init = 3.5  # noise initial parameter
     max_epoch = 100  # maximum epoch during training
@@ -53,7 +55,8 @@ class ConfigS3DIS:
     train_steps = 500  # Number of steps per epochs
     val_steps = 100  # Number of validation steps per epoch
 
-    sub_sampling_ratio = [4, 4, 4, 4, 2]  # sampling ratio of random sampling at each layer
+    # sampling ratio of random sampling at each layer
+    sub_sampling_ratio = [4, 4, 4, 4, 2]
     d_out = [16, 64, 128, 256, 512]  # feature dimension
 
     noise_init = 3.5  # noise initial parameter
@@ -73,16 +76,17 @@ class ConfigSemantic3D:
     num_classes = 8  # Number of valid classes
     sub_grid_size = 0.06  # preprocess_parameter
 
-    batch_size = 4  # batch_size during training
+    batch_size = 4 # batch_size during training
     val_batch_size = 16  # batch_size during validation and test
     train_steps = 500  # Number of steps per epochs
     val_steps = 100  # Number of validation steps per epoch
 
-    sub_sampling_ratio = [4, 4, 4, 4, 2]  # sampling ratio of random sampling at each layer
+    # sampling ratio of random sampling at each layer
+    sub_sampling_ratio = [4, 4, 4, 4, 2]
     d_out = [16, 64, 128, 256, 512]  # feature dimension
 
     noise_init = 3.5  # noise initial parameter
-    max_epoch = 100  # maximum epoch during training
+    max_epoch = 10  # 100 - maximum epoch during training
     learning_rate = 1e-2  # initial learning rate
     lr_decays = {i: 0.95 for i in range(0, 500)}  # decay rate of learning rate
 
@@ -100,16 +104,88 @@ class ConfigSemantic3D:
     augment_color = 0.8
 
 
+class ConfigAppleTreeField:
+    k_n = 16  # KNN
+    num_layers = 5  # Number of layers
+    num_points = 65536  # Number of input points - Field
+    #num_points = 32768  # Number of input points - Synthetic
+    num_classes = 2  # Number of valid classes
+    sub_grid_size = 0.001  # preprocess_parameter
+
+    batch_size = 8 # 4 - batch_size during training
+    val_batch_size = 32  # batch_size during validation and test
+    train_steps = 500  # Number of steps per epochs
+    val_steps = 100  # Number of validation steps per epoch
+
+    # sampling ratio of random sampling at each layer
+    sub_sampling_ratio = [4, 4, 4, 4, 2]
+    d_out = [16, 64, 128, 256, 512]  # feature dimension
+
+    noise_init = 3.5  # noise initial parameter
+    max_epoch = 100  # 100 - maximum epoch during training
+    learning_rate = 1e-2  # initial learning rate
+    lr_decays = {i: 0.95 for i in range(0, 500)}  # decay rate of learning rate
+
+    train_sum_dir = 'train_log'
+    saving = True
+    saving_path = None
+
+    augment_scale_anisotropic = True
+    augment_symmetries = [True, False, False]
+    augment_rotation = 'vertical'
+    augment_scale_min = 0.8
+    augment_scale_max = 1.2
+    augment_noise = 0.001
+    augment_occlusion = 'none'
+    augment_color = 0.8
+
+
+class ConfigAppleTreeSynthetic:
+    k_n = 16  # KNN
+    num_layers = 5  # Number of layers
+    num_points = 32768  # Number of input points - Synthetic
+    num_classes = 2  # Number of valid classes
+    sub_grid_size = 0.001  # preprocess_parameter
+
+    batch_size = 8 # 4 - batch_size during training
+    val_batch_size = 32  # batch_size during validation and test
+    train_steps = 500  # Number of steps per epochs
+    val_steps = 100  # Number of validation steps per epoch
+
+    # sampling ratio of random sampling at each layer
+    sub_sampling_ratio = [4, 4, 4, 4, 2]
+    d_out = [16, 64, 128, 256, 512]  # feature dimension
+
+    noise_init = 3.5  # noise initial parameter
+    max_epoch = 100  # 100 - maximum epoch during training
+    learning_rate = 1e-2  # initial learning rate
+    lr_decays = {i: 0.95 for i in range(0, 500)}  # decay rate of learning rate
+
+    train_sum_dir = 'train_log'
+    saving = True
+    saving_path = None
+
+    augment_scale_anisotropic = True
+    augment_symmetries = [True, False, False]
+    augment_rotation = 'vertical'
+    augment_scale_min = 0.8
+    augment_scale_max = 1.2
+    augment_noise = 0.001
+    augment_occlusion = 'none'
+    augment_color = 0.8
+
 class DataProcessing:
     @staticmethod
     def load_pc_semantic3d(filename):
-        pc_pd = pd.read_csv(filename, header=None, delim_whitespace=True, dtype=np.float16)
+        pc_pd = pd.read_csv(filename, header=None,
+                            delim_whitespace=True, dtype=np.float16)
         pc = pc_pd.values
         return pc
 
     @staticmethod
     def load_label_semantic3d(filename):
-        label_pd = pd.read_csv(filename, header=None, delim_whitespace=True, dtype=np.uint8)
+        label_pd = pd.read_csv(filename, header=None,
+                               delim_whitespace=True, dtype=np.uint8)
         cloud_labels = label_pd.values
         return cloud_labels
 
@@ -141,13 +217,17 @@ class DataProcessing:
             seq_path = join(dataset_path, seq_id)
             pc_path = join(seq_path, 'velodyne')
             if seq_id == '08':
-                val_file_list.append([join(pc_path, f) for f in np.sort(os.listdir(pc_path))])
+                val_file_list.append([join(pc_path, f)
+                                      for f in np.sort(os.listdir(pc_path))])
                 if seq_id == test_scan_num:
-                    test_file_list.append([join(pc_path, f) for f in np.sort(os.listdir(pc_path))])
+                    test_file_list.append([join(pc_path, f)
+                                           for f in np.sort(os.listdir(pc_path))])
             elif int(seq_id) >= 11 and seq_id == test_scan_num:
-                test_file_list.append([join(pc_path, f) for f in np.sort(os.listdir(pc_path))])
+                test_file_list.append([join(pc_path, f)
+                                       for f in np.sort(os.listdir(pc_path))])
             elif seq_id in ['00', '01', '02', '03', '04', '05', '06', '07', '09', '10']:
-                train_file_list.append([join(pc_path, f) for f in np.sort(os.listdir(pc_path))])
+                train_file_list.append([join(pc_path, f)
+                                        for f in np.sort(os.listdir(pc_path))])
 
         train_file_list = np.concatenate(train_file_list, axis=0)
         val_file_list = np.concatenate(val_file_list, axis=0)
@@ -163,7 +243,8 @@ class DataProcessing:
         :return: neighbor_idx: neighboring points indexes, B*N2*k
         """
 
-        neighbor_idx = nearest_neighbors.knn_batch(support_pts, query_pts, k, omp=True)
+        neighbor_idx = nearest_neighbors.knn_batch(
+            support_pts, query_pts, k, omp=True)
         return neighbor_idx.astype(np.int32)
 
     @staticmethod
@@ -256,6 +337,10 @@ class DataProcessing:
             num_per_class = np.array([55437630, 320797, 541736, 2578735, 3274484, 552662, 184064, 78858,
                                       240942562, 17294618, 170599734, 6369672, 230413074, 101130274, 476491114,
                                       9833174, 129609852, 4506626, 1168181])
+        elif dataset_name is 'AppleTree':
+            num_per_class = np.array([10000000, 10000])
+
+
         weight = num_per_class / float(sum(num_per_class))
         ce_label_weight = 1 / (weight + 0.02)
         return np.expand_dims(ce_label_weight, axis=0)
@@ -278,7 +363,7 @@ class Plot:
         if pc_xyzrgb.shape[1] == 3:
             open3d.draw_geometries([pc])
             return 0
-        if np.max(pc_xyzrgb[:, 3:6]) > 20:  ## 0-255
+        if np.max(pc_xyzrgb[:, 3:6]) > 20:  # 0-255
             pc.colors = open3d.Vector3dVector(pc_xyzrgb[:, 3:6] / 255.)
         else:
             pc.colors = open3d.Vector3dVector(pc_xyzrgb[:, 3:6])
@@ -295,7 +380,8 @@ class Plot:
         if plot_colors is not None:
             ins_colors = plot_colors
         else:
-            ins_colors = Plot.random_colors(len(np.unique(pc_sem_ins)) + 1, seed=2)
+            ins_colors = Plot.random_colors(
+                len(np.unique(pc_sem_ins)) + 1, seed=2)
 
         ##############################
         sem_ins_labels = np.unique(pc_sem_ins)
@@ -313,14 +399,14 @@ class Plot:
 
             Y_colors[valid_ind] = tp
 
-            ### bbox
+            # bbox
             valid_xyz = pc_xyz[valid_ind]
 
-            xmin = np.min(valid_xyz[:, 0]);
+            xmin = np.min(valid_xyz[:, 0])
             xmax = np.max(valid_xyz[:, 0])
-            ymin = np.min(valid_xyz[:, 1]);
+            ymin = np.min(valid_xyz[:, 1])
             ymax = np.max(valid_xyz[:, 1])
-            zmin = np.min(valid_xyz[:, 2]);
+            zmin = np.min(valid_xyz[:, 2])
             zmax = np.max(valid_xyz[:, 2])
             sem_ins_bbox.append(
                 [[xmin, ymin, zmin], [xmax, ymax, zmax], [min(tp[0], 1.), min(tp[1], 1.), min(tp[2], 1.)]])

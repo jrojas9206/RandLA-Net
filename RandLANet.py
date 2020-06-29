@@ -1,5 +1,6 @@
 from os.path import exists, join
 from os import makedirs
+import sklearn
 from sklearn.metrics import confusion_matrix
 from helper_tool import DataProcessing as DP
 import tensorflow as tf
@@ -11,11 +12,11 @@ import time
 def log_out(out_str, f_out):
     f_out.write(out_str + '\n')
     f_out.flush()
-    print(out_str)
+    print(out_str, flush=True)
 
 
 class Network:
-    def __init__(self, dataset, config):
+    def __init__(self, dataset, config, restore_snap=None):
         flat_inputs = dataset.flat_inputs
         self.config = config
         # Path of the result folder
@@ -100,6 +101,10 @@ class Network:
         self.train_writer = tf.summary.FileWriter(config.train_sum_dir, self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
 
+        if restore_snap is not None:
+            self.saver.restore(self.sess, restore_snap)
+            print("Model restored from " + restore_snap)
+
     def inference(self, inputs, is_training):
 
         d_out = self.config.d_out
@@ -157,16 +162,17 @@ class Network:
                        self.logits,
                        self.labels,
                        self.accuracy]
+
                 _, _, summary, l_out, probs, labels, acc = self.sess.run(ops, {self.is_training: True})
+
                 self.train_writer.add_summary(summary, self.training_step)
                 t_end = time.time()
-                if self.training_step % 50 == 0:
+                if self.training_step % 5 == 0:
                     message = 'Step {:08d} L_out={:5.3f} Acc={:4.2f} ''---{:8.2f} ms/batch'
                     log_out(message.format(self.training_step, l_out, acc, 1000 * (t_end - t_start)), self.Log_file)
                 self.training_step += 1
 
             except tf.errors.OutOfRangeError:
-
                 m_iou = self.evaluate(dataset)
                 if m_iou > np.max(self.mIou_list):
                     # Save the best model
@@ -199,6 +205,63 @@ class Network:
         print('finished')
         self.sess.close()
 
+
+    def scores(self, Y, Y_Pred):
+
+        global_balanced_acc = sklearn.metrics.balanced_accuracy_score(
+            Y, Y_Pred)
+
+        precision, recall, f1_score, support = sklearn.metrics.precision_recall_fscore_support(
+            Y, Y_Pred)
+
+        macro_recall = sum(recall) / 2.0
+        macro_precision = sum(precision) / 2.0
+
+        macro_f1_score = (2 * macro_precision * macro_recall) / \
+            (macro_precision + macro_recall)
+
+        confusion_matrix = sklearn.metrics.multilabel_confusion_matrix(
+            Y, Y_Pred)
+
+        mcc = sklearn.metrics.matthews_corrcoef(Y, Y_Pred)
+
+        iou = sklearn.metrics.jaccard_score(Y, Y_Pred, average=None)
+
+        miou = (iou[0] + iou[1]) / 2
+
+        info = """
+
+        Macro F1 Score : {}
+        Balanced accuracy : {}
+        Matthews correlation coefficient (MCC) : {}
+        IoU : {}
+        M IoU : {}
+
+        Noise / Apple :
+
+        PRECISION: {}
+        RECALL (Acc 2 class): {}
+        F1 Scores: {}
+        SUPPORT: {}
+
+        CONFUSION MATRIX:
+        {}
+
+        """.format(macro_f1_score,
+                   global_balanced_acc,
+                   mcc,
+                   iou,
+                   miou,
+                   precision,
+                   recall,
+                   f1_score,
+                   support,
+                   confusion_matrix)
+        
+        print(info, flush=True)
+
+        return macro_f1_score, global_balanced_acc, mcc, f1_score[1], miou
+
     def evaluate(self, dataset):
 
         # Initialise iterator with validation data
@@ -210,8 +273,11 @@ class Network:
         val_total_correct = 0
         val_total_seen = 0
 
+        gt_label = list()
+        pred_label = list()
+
         for step_id in range(self.config.val_steps):
-            if step_id % 50 == 0:
+            if step_id % 5 == 0:
                 print(str(step_id) + ' / ' + str(self.config.val_steps))
             try:
                 ops = (self.prob_logits, self.labels, self.accuracy)
@@ -226,6 +292,9 @@ class Network:
                     labels_valid = labels_valid - 1
                     pred_valid = np.delete(pred, invalid_idx)
 
+                gt_label.append(labels_valid)
+                pred_label.append(pred_valid)
+
                 correct = np.sum(pred_valid == labels_valid)
                 val_total_correct += correct
                 val_total_seen += len(labels_valid)
@@ -237,6 +306,12 @@ class Network:
 
             except tf.errors.OutOfRangeError:
                 break
+
+
+        gt_label = np.concatenate(gt_label)
+        pred_label = np.concatenate(pred_label)
+
+        self.scores(gt_label, pred_label)
 
         iou_list = []
         for n in range(0, self.config.num_classes, 1):
