@@ -11,9 +11,7 @@ def convert(filename, output_dir):
 
     points = data[:, 0:3]
     colors = data[:, 3:6]
-    
-    print(data.shape)
-    print(points.shape, colors.shape)
+
 
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue']
     
@@ -29,7 +27,6 @@ if __name__ == "__main__":
         os.mkdir(output_dir)
 
     filenames = glob.glob(input_dir + "*.txt")
-    print(filenames)
     for filename in filenames:
         print(filename)
         convert(filename, output_dir)

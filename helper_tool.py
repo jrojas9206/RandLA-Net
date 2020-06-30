@@ -108,7 +108,6 @@ class ConfigAppleTreeField:
     k_n = 16  # KNN
     num_layers = 5  # Number of layers
     num_points = 65536  # Number of input points - Field
-    #num_points = 32768  # Number of input points - Synthetic
     num_classes = 2  # Number of valid classes
     sub_grid_size = 0.001  # preprocess_parameter
 
@@ -173,6 +172,7 @@ class ConfigAppleTreeSynthetic:
     augment_noise = 0.001
     augment_occlusion = 'none'
     augment_color = 0.8
+
 
 class DataProcessing:
     @staticmethod

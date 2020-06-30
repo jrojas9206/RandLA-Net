@@ -4,13 +4,9 @@ import glob
 
 if __name__ == "__main__":
 
-    # input_dir = "/home/artzet_s/code/dataset/field_afef_apple_tree_filtered/"
-    # label_dir = "/home/artzet_s/code/dataset/labels/Log_2020-06-12_06-25-29/predictions/"
-    # output_dir = "/home/artzet_s/code/dataset/randlanet_prediction_2"
-
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/field_afef_apple_tree_filtered/"
-    label_dir = "/gpfswork/rech/wwk/uqr22pt/RandLaNet_results/test/Log_2020-06-18_08-11-09/predictions/"
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/randlanet_prediction_3"
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test/"
+    label_dir = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net/test/Log_2020-06-18_12-53-43/predictions/"
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/pred_RandLA-Net_field_HiRes"
 
 
     if not os.path.exists(output_dir):

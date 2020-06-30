@@ -129,23 +129,23 @@ def convert_for_training(filename, output_dir, grid_size=0.005, synthetic=False)
 
 
 def prepare_data_field():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree"
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_field"
     grid_size = 0.001
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     # Generate Training data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree/field_afef_apple_tree_training/"
-    training_filenames = glob.glob(input_dir + "*.txt")
-    print(training_filenames, sep="\n")
-    for filename in training_filenames:
-        print(filename)
-        convert_for_training(filename, output_dir, grid_size=grid_size)
-
+    for i in range(1, 6):
+        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}".format(i)
+        training_filenames = glob.glob(input_dir + "*.txt")
+        print(training_filenames, sep="\n")
+        for filename in training_filenames:
+            print(filename)
+            convert_for_training(filename, output_dir, grid_size=grid_size, synthetic=True)
 
     # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/field_afef_apple_tree_filtered/"
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test"
     training_basename = [os.path.basename(f) for f in training_filenames]
 
     test_filenames = glob.glob(input_dir + "*.txt")
@@ -160,22 +160,23 @@ def prepare_data_field():
 
 
 def prepare_data_synthetic():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_synthetic"
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes"
     grid_size = 0.001
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
 
     # Generate Training data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/synthetic_train/"
-    training_filenames = glob.glob(input_dir + "*.txt")
-    print(training_filenames, sep="\n")
-    for filename in training_filenames:
-        print(filename)
-        convert_for_training(filename, output_dir, grid_size=grid_size, synthetic=True)
+    for i in range(1, 6):
+        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/fold_{}".format(i)
+        training_filenames = glob.glob(input_dir + "*.txt")
+        print(training_filenames, sep="\n")
+        for filename in training_filenames:
+            print(filename)
+            convert_for_training(filename, output_dir, grid_size=grid_size, synthetic=True)
 
     # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/synthetic_test/"
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/test"
     training_basename = [os.path.basename(f) for f in training_filenames]
 
     test_filenames = glob.glob(input_dir + "*.txt")

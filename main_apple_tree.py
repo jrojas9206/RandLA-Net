@@ -23,9 +23,9 @@ class AppleTree:
         self.name = 'AppleTree'
 
         if protocol == "synthetic":
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_synthetic"
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_synthetic_HiHiRes"
         else:
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree"
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_field"
         
         self.label_to_names = {0: 'unlabeled',
                                1: 'apple'}
