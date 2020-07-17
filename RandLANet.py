@@ -278,7 +278,7 @@ class Network:
 
         for step_id in range(self.config.val_steps):
             if step_id % 5 == 0:
-                print(str(step_id) + ' / ' + str(self.config.val_steps))
+                print(str(step_id) + ' / ' + str(self.config.val_steps), flush=True)
             try:
                 ops = (self.prob_logits, self.labels, self.accuracy)
                 stacked_prob, labels, acc = self.sess.run(ops, {self.is_training: False})

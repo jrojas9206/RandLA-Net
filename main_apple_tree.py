@@ -9,7 +9,7 @@ from helper_tool import DataProcessing as DP
 from helper_tool import ConfigAppleTreeField as cfg_field
 from helper_tool import ConfigAppleTreeSynthetic as cfg_synthetic
 
-cfg = cfg_synthetic
+cfg = None
 
 import tensorflow as tf
 import numpy as np
@@ -18,14 +18,18 @@ import pickle, argparse, os
 class AppleTree:
     def __init__(self, protocol):
         """
-        protocol : "synthetic", "HiRes", "LowRes"
+        protocol : "synthetic_HiHiRes", "field", "field_only_xyz"
         """
         self.name = 'AppleTree'
 
-        if protocol == "synthetic":
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_synthetic_HiHiRes"
+        if protocol == "synthetic_HiHiRes":
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes"
+        elif protocol == "field_only_xyz":
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz"
+        elif protocol == "field":
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field"
         else:
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_field"
+            exit("wrong protocol")
         
         self.label_to_names = {0: 'unlabeled',
                                1: 'apple'}
@@ -39,28 +43,35 @@ class AppleTree:
         self.full_pc_folder = join(self.path, 'original_ply')
         self.sub_pc_folder = join(self.path, 'input_{:.3f}'.format(cfg.sub_grid_size))
 
-        if protocol == "synthetic":
+        if protocol == "synthetic_HiHiRes":
             self.training_folder = join(self.path, "training")
             filenames = glob.glob(join(self.training_folder, "*.ply"))
             self.train_files = filenames[:80]
             self.val_files = filenames[80:]
         else:
-            self.training_folder = join(self.path, "training")
-            self.train_files = glob.glob(join(self.training_folder, "*.ply"))
-            self.val_folder = join(self.path, "validation")
+            validation_fold = 1
+            self.train_files = []
+
+            for i in range(1, 6):
+                if i != validation_fold:
+                    self.training_folder = join(self.path, "fold_{}".format(i))
+                    self.train_files += glob.glob(join(self.training_folder, "*.ply"))
+
+            self.val_folder = join(self.path, "fold_{}".format(validation_fold))
             self.val_files = glob.glob(join(self.val_folder, "*.ply"))
 
 
         self.test_folder = join(self.path, "test")
+        self.test_files = glob.glob(join(self.test_folder, "*.ply"))
 
-        if protocol == "synthetic":
-            self.test_files = glob.glob(join(self.test_folder, "*.ply"))
-        elif protocol == "HiRes":
-            self.test_files = glob.glob(join(self.test_folder, "*high_quality*.ply"))
-        else:
-            self.test_files = glob.glob(join(self.test_folder, "*2018*.ply"))
-            self.test_files += glob.glob(join(self.test_folder, "*2019*.ply"))
-            self.test_files = [f for f in self.test_files if "high_quality" not in f]
+        # if protocol == "synthetic_HiHiRes":
+        #     self.test_files = glob.glob(join(self.test_folder, "*.ply"))
+        # elif protocol == "HiRes":
+        #     self.test_files = glob.glob(join(self.test_folder, "*high_quality*.ply"))
+        # else:
+        #     self.test_files = glob.glob(join(self.test_folder, "*2018*.ply"))
+        #     self.test_files += glob.glob(join(self.test_folder, "*2019*.ply"))
+        #     self.test_files = [f for f in self.test_files if "high_quality" not in f]
 
         self.val_split = 1
 
@@ -334,7 +345,8 @@ class AppleTree:
         self.test_init_op = iter.make_initializer(self.batch_test_data)
 
 
-if __name__ == '__main__':
+def launch_training(protocol):
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', type=int, default=0, help='the number of GPUs to use [default: 0]')
     parser.add_argument('--mode', type=str, default='train', help='options: train, test, vis')
@@ -347,10 +359,10 @@ if __name__ == '__main__':
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
     Mode = FLAGS.mode
-    dataset = AppleTree(protocol="synthetic")
+
+    dataset = AppleTree(protocol)
     dataset.init_input_pipeline()
     
-
     if Mode == 'train':
         model = Network(dataset, cfg)
         model.train(dataset)
@@ -362,8 +374,9 @@ if __name__ == '__main__':
             chosen_snap = FLAGS.model_path
         else:
             chosen_snapshot = -1
-            logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
-            chosen_folder = logs[-1]
+            # logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
+            # chosen_folder = logs[-1]
+            chosen_folder = cfg.config.saving_path
             snap_path = join(chosen_folder, 'snapshots')
             snap_steps = [int(f[:-5].split('-')[-1]) for f in os.listdir(snap_path) if f[-5:] == '.meta']
             chosen_step = np.sort(snap_steps)[-1]
@@ -379,8 +392,9 @@ if __name__ == '__main__':
             chosen_snap = FLAGS.model_path
         else:
             chosen_snapshot = -1
-            logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
-            chosen_folder = logs[-1]
+            # logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
+            # chosen_folder = logs[-1]
+            chosen_folder = cfg.config.saving_path
             snap_path = join(chosen_folder, 'snapshots')
             snap_steps = [int(f[:-5].split('-')[-1]) for f in os.listdir(snap_path) if f[-5:] == '.meta']
             chosen_step = np.sort(snap_steps)[-1]
@@ -405,3 +419,30 @@ if __name__ == '__main__':
                 labels = flat_inputs[21]
                 Plot.draw_pc_sem_ins(pc_xyz[0, :, :], labels[0, :])
                 Plot.draw_pc_sem_ins(sub_pc_xyz[0, :, :], labels[0, 0:np.shape(sub_pc_xyz)[1]])
+
+def train_field():
+    global cfg
+    cfg = cfg_field
+    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field_2"
+    print(cfg.saving_path, flush=True)
+    launch_training("field")
+
+def train_field_only_xyz():
+    global cfg
+    cfg = cfg_field
+    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field_only_xyz"
+    print(cfg.saving_path, flush=True)
+    launch_training("field_only_xyz")
+
+def train_synthetic_HiHiRes():
+    global cfg
+    cfg = cfg_synthetic
+    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_synthetic_HiHiRes"
+    print(cfg.saving_path, flush=True)    
+    launch_training("synthetic_HiHiRes")
+
+if __name__ == '__main__':
+
+    train_field()
+    # train_field_only_xyz()
+    # train_synthetic_HiHiRes()
