@@ -423,7 +423,7 @@ def launch_training(protocol):
 def train_field():
     global cfg
     cfg = cfg_field
-    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field"
+    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field_2"
     print(cfg.saving_path, flush=True)
     launch_training("field")
 
@@ -442,7 +442,6 @@ def train_synthetic_HiHiRes():
     launch_training("synthetic_HiHiRes")
 
 if __name__ == '__main__':
-
     # train_field()
     train_field_only_xyz()
     # train_synthetic_HiHiRes()

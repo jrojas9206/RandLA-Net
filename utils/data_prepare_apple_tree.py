@@ -25,7 +25,7 @@ def normalize(adr):
     return adr
 
 
-def convert_for_test(filename, output_dir, grid_size=0.005, synthetic=False):
+def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
 
     original_pc_folder = os.path.join(output_dir, 'test')
     if not os.path.exists(original_pc_folder):
@@ -41,13 +41,14 @@ def convert_for_test(filename, output_dir, grid_size=0.005, synthetic=False):
 
     points = data[:, 0:3].astype(numpy.float32)
 
-    if synthetic:
+    if protocol == "synthetic" or protocol == "field_only_xyz":
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-
-    else:
+    elif protocol == "field":
         adr = normalize(data[:, 3:6]) * 255
         colors = adr.astype(numpy.uint8)
+    else:
+        exit("unknown protocol")
 
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue']
 
@@ -74,11 +75,11 @@ def convert_for_test(filename, output_dir, grid_size=0.005, synthetic=False):
         pickle.dump([proj_idx, labels], f)
 
 
-def convert_for_training(filename, output_dir, grid_size=0.005, synthetic=False):
+def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field"):
 
-    original_pc_folder = os.path.join(output_dir, 'training')
-    if not os.path.exists(original_pc_folder):
-        os.mkdir(original_pc_folder)
+    fold_output_dir = os.path.join(output_dir, "fold_{}/".format(num_fold))
+    if not os.path.exists(fold_output_dir):
+        os.mkdir(fold_output_dir)
 
     sub_pc_folder = os.path.join(output_dir, 'input_{:.3f}'.format(grid_size))
     if not os.path.exists(sub_pc_folder):
@@ -89,19 +90,23 @@ def convert_for_training(filename, output_dir, grid_size=0.005, synthetic=False)
     data = numpy.loadtxt(filename)
 
     points = data[:, 0:3].astype(numpy.float32)
-    if synthetic:
+    if protocol == "synthetic":
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
         labels = data[:, 3].astype(numpy.uint8)
-
-    else:
+    elif protocol == "field_only_xyz":
+        colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
+        labels = data[:, 6].astype(numpy.uint8)
+    elif protocol == "field":
         adr = normalize(data[:, 3:6]) * 255
         colors = adr.astype(numpy.uint8)
         labels = data[:, 6].astype(numpy.uint8)
+    else:
+        exit("unknown protocol")
 
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue', 'class']
 
-    full_ply_path = os.path.join(original_pc_folder, basename + '.ply')
+    full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
     #  Subsample to save space
     # sub_points, sub_colors, sub_labels = DP.grid_sub_sampling(points, colors, labels, 0.01)
@@ -129,7 +134,8 @@ def convert_for_training(filename, output_dir, grid_size=0.005, synthetic=False)
 
 
 def prepare_data_field():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data/apple_tree_field"
+    
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field"
     grid_size = 0.001
 
     if not os.path.exists(output_dir):
@@ -137,30 +143,62 @@ def prepare_data_field():
 
     # Generate Training data
     for i in range(1, 6):
-        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}".format(i)
+        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}/".format(i)
+
         training_filenames = glob.glob(input_dir + "*.txt")
         print(training_filenames, sep="\n")
         for filename in training_filenames:
-            print(filename)
-            convert_for_training(filename, output_dir, grid_size=grid_size, synthetic=True)
+            print(filename, flush=True)
+            convert_for_training(filename, i, output_dir, outgrid_size=grid_size, protocol="field")
 
     # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test"
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test/"
     training_basename = [os.path.basename(f) for f in training_filenames]
 
     test_filenames = glob.glob(input_dir + "*.txt")
     print(test_filenames, sep="\n")
     for filename in test_filenames:
         if os.path.basename(filename) in training_basename:
-            print("not this one", filename)
+            print("not this one", filename, flush=True)
             continue
 
-        print(filename)
-        convert_for_test(filename, output_dir, grid_size=grid_size)
+        print(filename, flush=True)
+        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="field")
+
+
+def prepare_data_field_only_xyz():
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz_2"
+    grid_size = 0.001
+
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
+    # Generate Training data
+    for i in range(1, 6):
+        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}/".format(i)
+        training_filenames = glob.glob(input_dir + "*.txt")
+        print(training_filenames, sep="\n")
+        for filename in training_filenames:
+            print(filename, flush=True)
+            convert_for_training(filename, i, output_dir, grid_size=grid_size, protocol="field_only_xyz")
+
+    # Generate test data
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test/"
+    training_basename = [os.path.basename(f) for f in training_filenames]
+
+    test_filenames = glob.glob(input_dir + "*.txt")
+    print(test_filenames, sep="\n")
+    for filename in test_filenames:
+        if os.path.basename(filename) in training_basename:
+            print("not this one", filename, flush=True)
+            continue
+
+        print(filename, flush=True)
+        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="field_only_xyz")
 
 
 def prepare_data_synthetic():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes"
+    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes_2"
     grid_size = 0.001
 
     if not os.path.exists(output_dir):
@@ -168,26 +206,28 @@ def prepare_data_synthetic():
 
     # Generate Training data
     for i in range(1, 6):
-        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/fold_{}".format(i)
+        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/fold_{}/".format(i)
         training_filenames = glob.glob(input_dir + "*.txt")
         print(training_filenames, sep="\n")
         for filename in training_filenames:
-            print(filename)
-            convert_for_training(filename, output_dir, grid_size=grid_size, synthetic=True)
+            print(filename, flush=True)
+            convert_for_training(filename, i, output_dir, grid_size=grid_size, protocol="synthetic")
 
     # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/test"
+    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/test/"
     training_basename = [os.path.basename(f) for f in training_filenames]
 
     test_filenames = glob.glob(input_dir + "*.txt")
     print(test_filenames, sep="\n")
     for filename in test_filenames:
         if os.path.basename(filename) in training_basename:
-            print("not this one", filename)
+            print("not this one", filename, flush=True)
             continue
 
-        print(filename)
-        convert_for_test(filename, output_dir, grid_size=grid_size, synthetic=True)
+        print(filename, flush=True)
+        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic")
 
 if __name__ == "__main__":
+    #prepare_data_field()
+    prepare_data_field_only_xyz()
     prepare_data_synthetic()
