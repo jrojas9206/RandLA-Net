@@ -4,6 +4,7 @@ import glob
 import pickle
 import sys
 import sklearn.neighbors
+import argparse 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
@@ -77,7 +78,11 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
 
 def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field"):
 
-    fold_output_dir = os.path.join(output_dir, "fold_{}/".format(num_fold))
+    if(num_fold is not None):
+        fold_output_dir = os.path.join(output_dir, "fold_{}/".format(num_fold))
+    else:
+        fold_output_dir = output_dir
+
     if not os.path.exists(fold_output_dir):
         os.mkdir(fold_output_dir)
 
@@ -198,7 +203,7 @@ def prepare_data_field_only_xyz():
 
 
 def prepare_data_synthetic():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes_2"
+    output_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/prepare2randlanet/"
     grid_size = 0.001
 
     if not os.path.exists(output_dir):
@@ -206,7 +211,7 @@ def prepare_data_synthetic():
 
     # Generate Training data
     for i in range(1, 6):
-        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/fold_{}/".format(i)
+        input_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/kfolds/fold_{}/".format(i)
         training_filenames = glob.glob(input_dir + "*.txt")
         print(training_filenames, sep="\n")
         for filename in training_filenames:
@@ -214,7 +219,7 @@ def prepare_data_synthetic():
             convert_for_training(filename, i, output_dir, grid_size=grid_size, protocol="synthetic")
 
     # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_synthetic_HiHiRes/test/"
+    input_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/kfolds/test/"
     training_basename = [os.path.basename(f) for f in training_filenames]
 
     test_filenames = glob.glob(input_dir + "*.txt")
@@ -227,7 +232,30 @@ def prepare_data_synthetic():
         print(filename, flush=True)
         convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic")
 
+def prepare_data_generic(path2data, path2output, grid_size=0.0001, verbose=False, protocol="synthetic", dataset="train"):
+    # Get the fail list 
+    lst_fls = glob.glob(path2data + "*.txt")
+    for idx, a_file in enumerate(lst_fls, start=1):
+        if(verbose):
+            print("-> Loading[%i/%i]: %s" %(len(lst_fls), idx, a_file))
+        if(dataset=="train"):
+            convert_for_training(a_file, None, path2output, protocol=protocol, grid_size=grid_size)
+        elif(dataset=="test"):
+            convert_for_test(a_file, path2output, grid_size=grid_size, protocol=protocol)
+        else:
+            raise ValueError("ERROR: Unknown option - %s" %dataset)
+    
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Prepare the point clouds for the randlanet model")
+    parser.add_argument("inputDir", type=str, help="Path to the directory with the point clouds")
+    parser.add_argument("--outputDir", type=str, help="Path to write the new files", default="./output")
+    parser.add_argument("--gridSize", type=str, help="--", default=0.0001)
+    parser.add_argument("--verbose", type=bool, help="Show verbose of each step", default=True)
+    parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz", default="synthetic")
+    parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test", default="train")
+    args = parser.parse_args()
+    print("-> Prepare data to randlanet model")
+    prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType)
     #prepare_data_field()
-    prepare_data_field_only_xyz()
-    prepare_data_synthetic()
+    #prepare_data_field_only_xyz()
+    #prepare_data_synthetic()
