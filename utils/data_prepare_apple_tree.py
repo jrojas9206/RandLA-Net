@@ -232,7 +232,7 @@ def prepare_data_synthetic():
         print(filename, flush=True)
         convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic")
 
-def prepare_data_generic(path2data, path2output, grid_size=0.0001, verbose=False, protocol="synthetic", dataset="train"):
+def prepare_data_generic(path2data, path2output, grid_size=0.001, verbose=False, protocol="synthetic", dataset="train"):
     # Get the fail list 
     lst_fls = glob.glob(path2data + "*.txt")
     for idx, a_file in enumerate(lst_fls, start=1):
@@ -249,7 +249,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Prepare the point clouds for the randlanet model")
     parser.add_argument("inputDir", type=str, help="Path to the directory with the point clouds")
     parser.add_argument("--outputDir", type=str, help="Path to write the new files", default="./output")
-    parser.add_argument("--gridSize", type=str, help="--", default=0.0001)
+    parser.add_argument("--gridSize", type=str, help="--", default=0.001)
     parser.add_argument("--verbose", type=bool, help="Show verbose of each step", default=True)
     parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz", default="synthetic")
     parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test", default="train")
