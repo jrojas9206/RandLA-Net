@@ -1,3 +1,4 @@
+import sys
 import glob
 import numpy
 from os.path import join, exists
@@ -23,7 +24,7 @@ class AppleTree:
         self.name = 'AppleTree'
 
         if protocol == "synthetic_HiHiRes":
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes"
+            self.path = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/special_split/susbset_at_0.2/train_test"
         elif protocol == "field_only_xyz":
             self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz"
         elif protocol == "field":
@@ -44,10 +45,15 @@ class AppleTree:
         self.sub_pc_folder = join(self.path, 'input_{:.3f}'.format(cfg.sub_grid_size))
 
         if protocol == "synthetic_HiHiRes":
+            # Path to the training files
             self.training_folder = join(self.path, "training")
             filenames = glob.glob(join(self.training_folder, "*.ply"))
-            self.train_files = filenames[:80]
-            self.val_files = filenames[80:]
+            # Generic selection for train and validation
+            # Select 90% of the training files for train the model 
+            # and 10% to validate 
+            train_p_file = int(len(filenames)*0.9)
+            self.train_files = filenames[:train_p_file]
+            self.val_files = filenames[train_p_file:]
         else:
             validation_fold = 1
             self.train_files = []
@@ -437,11 +443,11 @@ def train_field_only_xyz():
 def train_synthetic_HiHiRes():
     global cfg
     cfg = cfg_synthetic
-    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_synthetic_HiHiRes"
+    cfg.saving_path = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/special_split/susbset_at_0.2/trained_randlanet"
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes")
 
 if __name__ == '__main__':
     # train_field()
-    train_field_only_xyz()
-    # train_synthetic_HiHiRes()
+    # train_field_only_xyz()
+    train_synthetic_HiHiRes()
