@@ -16,19 +16,21 @@ import tensorflow as tf
 import numpy as np
 import pickle, argparse, os
 
+parser = argparse.ArgumentParser("Randla-NET applied to tree's organ detection")
+
 class AppleTree:
-    def __init__(self, protocol):
+    def __init__(self, protocol, path2dataset=None):
         """
         protocol : "synthetic_HiHiRes", "field", "field_only_xyz"
         """
         self.name = 'AppleTree'
 
-        if protocol == "synthetic_HiHiRes":
-            self.path = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/special_split/susbset_at_0.2/train_test"
-        elif protocol == "field_only_xyz":
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz"
-        elif protocol == "field":
-            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field"
+        if(protocol == "synthetic_HiHiRes"):
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_synthetic_HiHiRes" if path2dataset is None else path2dataset
+        elif(protocol == "field_only_xyz"):
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz" if path2dataset is None else path2dataset
+        elif(protocol == "field" ):
+            self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field" if path2dataset is None else path2dataset
         else:
             exit("wrong protocol")
         
@@ -352,11 +354,6 @@ class AppleTree:
 
 
 def launch_training(protocol):
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', type=int, default=0, help='the number of GPUs to use [default: 0]')
-    parser.add_argument('--mode', type=str, default='train', help='options: train, test, vis')
-    parser.add_argument('--model_path', type=str, default='None', help='pretrained model path')
     FLAGS = parser.parse_args()
 
     GPU_ID = FLAGS.gpu
@@ -426,28 +423,54 @@ def launch_training(protocol):
                 Plot.draw_pc_sem_ins(pc_xyz[0, :, :], labels[0, :])
                 Plot.draw_pc_sem_ins(sub_pc_xyz[0, :, :], labels[0, 0:np.shape(sub_pc_xyz)[1]])
 
-def train_field():
+def train_field(inputDir, outputDir):
     global cfg
     cfg = cfg_field
-    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field_2"
+    cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
     launch_training("field")
 
-def train_field_only_xyz():
+def train_field_only_xyz(inputDir, outputDir):
     global cfg
     cfg = cfg_field
-    cfg.saving_path = "/gpfswork/rech/wwk/uqr22pt/model_RandLA-Net_field_only_xyz"
+    cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
     launch_training("field_only_xyz")
 
-def train_synthetic_HiHiRes():
+def train_synthetic_HiHiRes(inputDir, outputDir):
     global cfg
     cfg = cfg_synthetic
-    cfg.saving_path = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/special_split/susbset_at_0.2/trained_randlanet"
+    cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes")
 
 if __name__ == '__main__':
+    parser.add_argument('--gpu', type=int, default=0, help='GPU ID [default: 0]')
+    parser.add_argument('--mode', type=str, default='train', help='options: train, test, vis')
+    parser.add_argument('--model_path', type=str, default='None', help='pretrained model path')
+    parser.add_argument('--inputDir', type=str, help="Path to the folder with the train/test/validation & the input folders", default=None)
+    parser.add_argument("--outputDir", type=str, help="Path to the output folder", default="./output/")
+    parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/field_xyz/filed", default="synthetic")
+    args = parser.parse_args()
     # train_field()
     # train_field_only_xyz()
-    train_synthetic_HiHiRes()
+    #train_synthetic_HiHiRes()
+    print("-> Randla-NET")
+    print(" -> GPU[ID]: %i" %args.gpu)
+    print(" -> Mode[train/test/vis]: %s" %args.mode)
+    print(" -> Output[Path]: %s" %args.outputDir)
+    print("  -> Status: %s" %("OK" if os.path.isdir(args.inputDir) else "Is going to be created")) 
+    print(" -> Input [Path]: %s" %("None" if args.inputDir is None else args.inputDir))
+    print("  -> Status: %s"%("OK" if os.path.isdir(args.inputDir) else "Error"))
+    print(" -> Protocol: %s" %args.protocol)
+    if(args.protocol == "synthetic"):
+        train_synthetic_HiHiRes(args.inputDir, args.outputDir)
+    elif(args.protocol == "field_xyz"):
+        train_field_only_xyz(args.inputDir, args.outputDir)
+    elif(args.protocol == "field"):
+        train_field(args.inputDir, args.outputDir)
+    else:
+        print("-> Error: Unknow options, please execute the following command and verify the defined args. \n$$>python main_apple_tree.py -h")
+    print("-> END")
+    sys.exit(0)
+    
