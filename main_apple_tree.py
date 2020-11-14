@@ -33,7 +33,6 @@ class AppleTree:
             self.path = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field" if path2dataset is None else path2dataset
         else:
             exit("wrong protocol")
-        
         self.label_to_names = {0: 'unlabeled',
                                1: 'apple'}
                                
@@ -353,7 +352,7 @@ class AppleTree:
         self.test_init_op = iter.make_initializer(self.batch_test_data)
 
 
-def launch_training(protocol):
+def launch_training(protocol, inputDir):
     FLAGS = parser.parse_args()
 
     GPU_ID = FLAGS.gpu
@@ -363,7 +362,7 @@ def launch_training(protocol):
 
     Mode = FLAGS.mode
 
-    dataset = AppleTree(protocol)
+    dataset = AppleTree(protocol, path2dataset=inputDir)
     dataset.init_input_pipeline()
     
     if Mode == 'train':
@@ -428,21 +427,21 @@ def train_field(inputDir, outputDir):
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
-    launch_training("field")
+    launch_training("field", inputDir)
 
 def train_field_only_xyz(inputDir, outputDir):
     global cfg
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
-    launch_training("field_only_xyz")
+    launch_training("field_only_xyz", inputDir)
 
 def train_synthetic_HiHiRes(inputDir, outputDir):
     global cfg
     cfg = cfg_synthetic
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)    
-    launch_training("synthetic_HiHiRes")
+    launch_training("synthetic_HiHiRes", inputDir)
 
 if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID [default: 0]')
