@@ -352,15 +352,13 @@ class AppleTree:
         self.test_init_op = iter.make_initializer(self.batch_test_data)
 
 
-def launch_training(protocol, inputDir):
-    FLAGS = parser.parse_args()
-
-    GPU_ID = FLAGS.gpu
+def launch_training(protocol, inputDir, parameters=None):
+    GPU_ID = parameters["gpu"]
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ['CUDA_VISIBLE_DEVICES'] = str(GPU_ID)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-    Mode = FLAGS.mode
+    Mode = parameters["mode"]
 
     dataset = AppleTree(protocol, path2dataset=inputDir)
     dataset.init_input_pipeline()
@@ -372,13 +370,13 @@ def launch_training(protocol, inputDir):
     elif Mode == "validation":
 
         cfg.saving = False
-        if FLAGS.model_path is not 'None':
-            chosen_snap = FLAGS.model_path
+        if parameters["model_path"] is not 'None':
+            chosen_snap = parameters["model_path"]
         else:
             chosen_snapshot = -1
             # logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
             # chosen_folder = logs[-1]
-            chosen_folder = cfg.config.saving_path
+            chosen_folder = parameters["outputDir"]
             snap_path = join(chosen_folder, 'snapshots')
             snap_steps = [int(f[:-5].split('-')[-1]) for f in os.listdir(snap_path) if f[-5:] == '.meta']
             chosen_step = np.sort(snap_steps)[-1]
@@ -390,13 +388,13 @@ def launch_training(protocol, inputDir):
     elif Mode == 'test':
         cfg.saving = False
         model = Network(dataset, cfg)
-        if FLAGS.model_path is not 'None':
-            chosen_snap = FLAGS.model_path
+        if parameters["model_path"] is not 'None':
+            chosen_snap = parameters["model_path"]
         else:
             chosen_snapshot = -1
             # logs = np.sort([os.path.join('results', f) for f in os.listdir('results') if f.startswith('Log')])
             # chosen_folder = logs[-1]
-            chosen_folder = cfg.config.saving_path
+            chosen_folder = parameters["outputDir"]
             snap_path = join(chosen_folder, 'snapshots')
             snap_steps = [int(f[:-5].split('-')[-1]) for f in os.listdir(snap_path) if f[-5:] == '.meta']
             chosen_step = np.sort(snap_steps)[-1]
@@ -422,21 +420,21 @@ def launch_training(protocol, inputDir):
                 Plot.draw_pc_sem_ins(pc_xyz[0, :, :], labels[0, :])
                 Plot.draw_pc_sem_ins(sub_pc_xyz[0, :, :], labels[0, 0:np.shape(sub_pc_xyz)[1]])
 
-def train_field(inputDir, outputDir):
+def train_field(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
     launch_training("field", inputDir)
 
-def train_field_only_xyz(inputDir, outputDir):
+def train_field_only_xyz(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
     launch_training("field_only_xyz", inputDir)
 
-def train_synthetic_HiHiRes(inputDir, outputDir):
+def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_synthetic
     cfg.saving_path = outputDir
@@ -451,6 +449,9 @@ if __name__ == '__main__':
     parser.add_argument("--outputDir", type=str, help="Path to the output folder", default="./output/")
     parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/field_xyz/filed", default="synthetic")
     args = parser.parse_args()
+    # Parameters copy to be able to use launch_training in other projects 
+    param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
+             "path2output": args.outputDir, "protocol":args.protocol} 
     # train_field()
     # train_field_only_xyz()
     #train_synthetic_HiHiRes()
@@ -463,11 +464,11 @@ if __name__ == '__main__':
     print("  -> Status: %s"%("OK" if os.path.isdir(args.inputDir) else "Error"))
     print(" -> Protocol: %s" %args.protocol)
     if(args.protocol == "synthetic"):
-        train_synthetic_HiHiRes(args.inputDir, args.outputDir)
-    elif(args.protocol == "field_xyz"):
-        train_field_only_xyz(args.inputDir, args.outputDir)
+        train_synthetic_HiHiRes(args.inputDir, args.outputDir, parameters=param)
+    elif(args.protocol == "field_only_xyz"):
+        train_field_only_xyz(args.inputDir, args.outputDir, parameters=param)
     elif(args.protocol == "field"):
-        train_field(args.inputDir, args.outputDir)
+        train_field(args.inputDir, args.outputDir, parameters=param)
     else:
         print("-> Error: Unknow options, please execute the following command and verify the defined args. \n$$>python main_apple_tree.py -h")
     print("-> END")
