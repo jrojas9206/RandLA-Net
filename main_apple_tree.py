@@ -322,35 +322,47 @@ class AppleTree:
         stacked_features = tf.concat([transformed_xyz, rgb], axis=-1)
         return stacked_features
 
-    def init_input_pipeline(self):
+    def init_input_pipeline(self, mode="train"):
         print('Initiating input pipelines')
-        cfg.ignored_label_inds = [self.label_to_idx[ign_label] for ign_label in self.ignored_labels]
-        gen_function, gen_types, gen_shapes = self.get_batch_gen('training')
-        gen_function_val, _, _ = self.get_batch_gen('validation')
-        gen_function_test, _, _ = self.get_batch_gen('test')
-        self.train_data = tf.data.Dataset.from_generator(gen_function, gen_types, gen_shapes)
-        self.val_data = tf.data.Dataset.from_generator(gen_function_val, gen_types, gen_shapes)
-        self.test_data = tf.data.Dataset.from_generator(gen_function_test, gen_types, gen_shapes)
+        if(mode=="train"):
+            cfg.ignored_label_inds = [self.label_to_idx[ign_label] for ign_label in self.ignored_labels]
+            gen_function, gen_types, gen_shapes = self.get_batch_gen('training')
+            gen_function_val, _, _ = self.get_batch_gen('validation')
+            gen_function_test, _, _ = self.get_batch_gen('test')
+            self.train_data = tf.data.Dataset.from_generator(gen_function, gen_types, gen_shapes)
+            self.val_data = tf.data.Dataset.from_generator(gen_function_val, gen_types, gen_shapes)
+            self.test_data = tf.data.Dataset.from_generator(gen_function_test, gen_types, gen_shapes)
 
-        self.batch_train_data = self.train_data.batch(cfg.batch_size)
-        self.batch_val_data = self.val_data.batch(cfg.val_batch_size)
-        self.batch_test_data = self.test_data.batch(cfg.val_batch_size)
-        map_func = self.get_tf_mapping()
+            self.batch_train_data = self.train_data.batch(cfg.batch_size)
+            self.batch_val_data = self.val_data.batch(cfg.val_batch_size)
+            self.batch_test_data = self.test_data.batch(cfg.val_batch_size)
+            map_func = self.get_tf_mapping()
 
-        self.batch_train_data = self.batch_train_data.map(map_func=map_func)
-        self.batch_val_data = self.batch_val_data.map(map_func=map_func)
-        self.batch_test_data = self.batch_test_data.map(map_func=map_func)
+            self.batch_train_data = self.batch_train_data.map(map_func=map_func)
+            self.batch_val_data = self.batch_val_data.map(map_func=map_func)
+            self.batch_test_data = self.batch_test_data.map(map_func=map_func)
 
-        self.batch_train_data = self.batch_train_data.prefetch(cfg.batch_size)
-        self.batch_val_data = self.batch_val_data.prefetch(cfg.val_batch_size)
-        self.batch_test_data = self.batch_test_data.prefetch(cfg.val_batch_size)
+            self.batch_train_data = self.batch_train_data.prefetch(cfg.batch_size)
+            self.batch_val_data = self.batch_val_data.prefetch(cfg.val_batch_size)
+            self.batch_test_data = self.batch_test_data.prefetch(cfg.val_batch_size)
 
-        iter = tf.data.Iterator.from_structure(self.batch_train_data.output_types, self.batch_train_data.output_shapes)
-        self.flat_inputs = iter.get_next()
-        self.train_init_op = iter.make_initializer(self.batch_train_data)
-        self.val_init_op = iter.make_initializer(self.batch_val_data)
-        self.test_init_op = iter.make_initializer(self.batch_test_data)
-
+            iter = tf.data.Iterator.from_structure(self.batch_train_data.output_types, self.batch_train_data.output_shapes)
+            self.flat_inputs = iter.get_next()
+            self.train_init_op = iter.make_initializer(self.batch_train_data)
+            self.val_init_op = iter.make_initializer(self.batch_val_data)
+            self.test_init_op = iter.make_initializer(self.batch_test_data)
+        elif(mode=="test"):
+            cfg.ignored_label_inds = [self.label_to_idx[ign_label] for ign_label in self.ignored_labels]
+            gen_function_test, gen_types, gen_shapes = self.get_batch_gen('test')
+            self.test_data = tf.data.Dataset.from_generator(gen_function_test, gen_types, gen_shapes)
+            self.batch_test_data = self.test_data.batch(cfg.val_batch_size)
+            map_func = self.get_tf_mapping()
+            self.batch_test_data = self.batch_test_data.map(map_func=map_func)
+            self.batch_test_data = self.batch_test_data.prefetch(cfg.val_batch_size)
+            iter = tf.data.Iterator.from_structure(self.batch_test_data.output_types, self.batch_test_data.output_shapes)
+            self.flat_inputs = iter.get_next()
+            self.train_init_op = iter.make_initializer(self.batch_test_data)
+            self.test_init_op = iter.make_initializer(self.batch_test_data)
 
 def launch_training(protocol, inputDir, parameters=None):
     GPU_ID = parameters["gpu"]
@@ -361,7 +373,7 @@ def launch_training(protocol, inputDir, parameters=None):
     Mode = parameters["mode"]
 
     dataset = AppleTree(protocol, path2dataset=inputDir)
-    dataset.init_input_pipeline()
+    dataset.init_input_pipeline(mode=Mode)
     
     if Mode == 'train':
         model = Network(dataset, cfg)
