@@ -432,26 +432,26 @@ def launch_training(protocol, inputDir, parameters=None):
                 Plot.draw_pc_sem_ins(pc_xyz[0, :, :], labels[0, :])
                 Plot.draw_pc_sem_ins(sub_pc_xyz[0, :, :], labels[0, 0:np.shape(sub_pc_xyz)[1]])
 
-def train_field(inputDir, outputDir, parameters=None):
+def train_field(inputDir, outputDir, param=None):
     global cfg
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
-    launch_training("field", inputDir)
+    launch_training("field", inputDir, parameters=param)
 
 def train_field_only_xyz(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
-    launch_training("field_only_xyz", inputDir)
+    launch_training("field_only_xyz", inputDir, parameters=param)
 
 def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_synthetic
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)    
-    launch_training("synthetic_HiHiRes", inputDir)
+    launch_training("synthetic_HiHiRes", inputDir, parameters=param)
 
 if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID [default: 0]')
