@@ -77,11 +77,11 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
 
 
 def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field"):
-
+    original_pc_folder = os.path.join(output_dir, 'training')
     if(num_fold is not None):
         fold_output_dir = os.path.join(output_dir, "fold_{}/".format(num_fold))
     else:
-        fold_output_dir = output_dir
+        fold_output_dir = original_pc_folder
 
     if not os.path.exists(fold_output_dir):
         os.mkdir(fold_output_dir)
@@ -113,7 +113,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
 
     full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
-    #  Subsample to save space
+    #  Subsample to save space
     # sub_points, sub_colors, sub_labels = DP.grid_sub_sampling(points, colors, labels, 0.01)
     #sub_labels = numpy.squeeze(sub_labels)
     # helper_ply.write_ply(full_ply_path, (sub_points, sub_colors, sub_labels), field_names)
@@ -230,7 +230,7 @@ def prepare_data_synthetic():
             continue
 
         print(filename, flush=True)
-        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic")
+        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic") 
 
 def prepare_data_generic(path2data, path2output, grid_size=0.001, verbose=False, protocol="synthetic", dataset="train"):
     # Get the fail list 
