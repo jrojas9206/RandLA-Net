@@ -45,7 +45,7 @@ class AppleTree:
         self.full_pc_folder = join(self.path, 'original_ply')
         self.sub_pc_folder = join(self.path, 'input_{:.3f}'.format(cfg.sub_grid_size))
 
-        if protocol == "synthetic_HiHiRes":
+        if protocol == "synthetic_HiHiRes" or protocol == "field_only_xyz":
             # Path to the training files
             self.training_folder = join(self.path, "training")
             filenames = glob.glob(join(self.training_folder, "*.ply"))
@@ -375,8 +375,12 @@ def launch_training(protocol, inputDir, parameters=None):
     dataset = AppleTree(protocol, path2dataset=inputDir)
     dataset.init_input_pipeline(mode=Mode)
     
-    if Mode == 'train':
+    if Mode == 'train' and not parameters["restoreTrain"]:
         model = Network(dataset, cfg)
+        model.train(dataset)
+
+    elif Mode == "train" and parameters["restoreTrain"]:
+        model = Network(dataset, cfg, restore_snap=parameters["model_path"])
         model.train(dataset)
 
     elif Mode == "validation":
@@ -460,14 +464,12 @@ if __name__ == '__main__':
     parser.add_argument('--inputDir', type=str, help="Path to the folder with the train/test/validation & the input folders", default=None)
     parser.add_argument("--outputDir", type=str, help="Path to the output folder", default="./output/")
     parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/field_xyz/filed", default="synthetic")
+    parser.add_argument("--restoreTrain", type=bool, help="Restore training True/False", default=False)
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
-             "path2output": args.outputDir, "protocol":args.protocol} 
-    # train_field()
-    # train_field_only_xyz()
-    #train_synthetic_HiHiRes()
-    print("-> Randla-NET")
+             "path2output": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain} 
+    print("-> RandLA-NET")
     print(" -> GPU[ID]: %i" %args.gpu)
     print(" -> Mode[train/test/vis]: %s" %args.mode)
     print(" -> Output[Path]: %s" %args.outputDir)
