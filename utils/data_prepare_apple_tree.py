@@ -46,7 +46,7 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
     elif protocol == "field":
-        adr = normalize(data[:, 3:6]) * 255
+        adr = normalize(data[:, 3:-1]) * 255
         colors = adr.astype(numpy.uint8)
     else:
         exit("unknown protocol")
