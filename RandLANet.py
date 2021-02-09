@@ -311,7 +311,7 @@ class Network:
         gt_label = np.concatenate(gt_label)
         pred_label = np.concatenate(pred_label)
 
-        self.scores(gt_label, pred_label)
+        #self.scores(gt_label, pred_label)
 
         iou_list = []
         for n in range(0, self.config.num_classes, 1):
