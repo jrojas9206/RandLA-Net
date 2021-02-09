@@ -45,7 +45,7 @@ class AppleTree:
         self.full_pc_folder = join(self.path, 'original_ply')
         self.sub_pc_folder = join(self.path, 'input_{:.3f}'.format(cfg.sub_grid_size))
 
-        if protocol == "synthetic_HiHiRes" or protocol == "field_only_xyz":
+        if protocol == "synthetic_HiHiRes" or protocol == "field_only_xyz" or "field":
             # Path to the training files
             self.training_folder = join(self.path, "training")
             filenames = glob.glob(join(self.training_folder, "*.ply"))
