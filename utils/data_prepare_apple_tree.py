@@ -27,26 +27,46 @@ def normalize(adr):
 
 
 def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
+    """
+    Load a txt file that contain a Point Cloud and generted their related KDtree and 
+    pyl file.
 
+    :INPUT:
+        filename: str, name of the txt file to process 
+        output_dir: str, path to the folder where have to be saved the new files 
+        grid_size: KDtree dimension reference to split the points 
+        protocol: str, all the annotations are going to be remove, 
+            - field_only_xyz: If the point cloud have the XYZ+Radiometric+Annotations
+                              and in the output only want to be conserver the representation of XYZ
+            - field: If the point clouds have XYZ+Radiometric+Annotations and in the output all the features
+                     want to be conserved 
+            - synthetic: If the point cloud only have the XYZ coordinates 
+    :OUTPUT:
+        The fuction will create a folder called 'input_GRID_SIZE' were are going to be 
+        the kdtree rerpesentation and differet pkl representation of the cloud.
+        Apart from this folder called 'test' folder will be created, this folder contain the pyl
+        files 
+    """
+    # Create the test folder 
     original_pc_folder = os.path.join(output_dir, 'test')
     if not os.path.exists(original_pc_folder):
         os.mkdir(original_pc_folder)
-
+    # Create the base directory to save the KDTREE and the other representations
     sub_pc_folder = os.path.join(output_dir, 'input_{:.3f}'.format(grid_size))
     if not os.path.exists(sub_pc_folder):
         os.mkdir(sub_pc_folder)
-
     basename = os.path.basename(filename)[:-4]
-
+    # LOAD FILE
     data = numpy.loadtxt(filename)
-
+    # XYZ
     points = data[:, 0:3].astype(numpy.float32)
-
+    # Create the variable to split the color or the radiometric features 
     if protocol == "synthetic" or protocol == "field_only_xyz":
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
     elif protocol == "field":
-        adr = normalize(data[:, 3:-1]) * 255
+        colBeforeAnn = points.shape[1]-2
+        adr = normalize(data[:, 3:colBeforeAnn]) * 255
         colors = adr.astype(numpy.uint8)
     else:
         exit("unknown protocol")
@@ -77,6 +97,27 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
 
 
 def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field"):
+    """
+    Load a txt file that contain a Point Cloud and generted their related KDtree and 
+    pyl file. 
+
+    :INPUT:
+        filename: str, name of the txt file to process 
+        output_dir: str, path to the folder where have to be saved the new files 
+        grid_size: KDtree dimension reference to split the points 
+        protocol: str, all the annotations are going to be remove, 
+            - field_only_xyz: If the point cloud have the XYZ+Radiometric+Annotations
+                              and in the output only want to be conserver the representation of XYZ and the annotations
+            - field: If the point clouds have XYZ+Radiometric+Annotations and in the output all the features and annotations
+                     want to be conserved 
+            - synthetic: If the point cloud only have the XYZ coordinates 
+    :OUTPUT:
+        The fuction will create a folder called 'input_GRID_SIZE' were are going to be 
+        the kdtree rerpesentation and differet pkl representation of the cloud.
+        Apart from this folder called 'test' folder will be created, this folder contain the pyl
+        files 
+    """
+
     original_pc_folder = os.path.join(output_dir, 'training')
     if(num_fold is not None):
         fold_output_dir = os.path.join(output_dir, "fold_{}/".format(num_fold))
@@ -98,12 +139,15 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     if protocol == "synthetic":
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-        labels = data[:, -1].astype(numpy.uint8)
+        colOfLabels = data.shape[1]-1 
+        labels = data[:, colOfLabels].astype(numpy.uint8)
     elif protocol == "field_only_xyz":
+        colOfLabels = data.shape[1]-2
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-        labels = data[:, -1].astype(numpy.uint8)
+        labels = data[:, colOfLabels].astype(numpy.uint8)
     elif protocol == "field":
-        adr = normalize(data[:, 3:-1]) * 255
+        colOfLabels = data.shape[1]-2
+        adr = normalize(data[:, 3:colOfLabels]) * 255
         colors = adr.astype(numpy.uint8)
         labels = data[:, -1].astype(numpy.uint8)
     else:
