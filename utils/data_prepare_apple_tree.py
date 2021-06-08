@@ -71,7 +71,7 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field", Co
             adr = normalize(data[:, ColorColumns]) * 255
         else: # Fit the positions 2,3 of features with Zeros
             cols2eval = data[ :, ColorColumns ]
-            d2fit = numpy.zeros( (data.shape[0], 3-len(ColorColumns) ), dtype=numpy.uin8 )
+            d2fit = numpy.zeros( (data.shape[0], 3-len(ColorColumns) ), dtype=numpy.uint8 )
             cols2eval = numpy.concatenate( ( cols2eval, d2fit ), axis=1 )
             adr = normalize( cols2eval ) * 255
         colors = adr.astype(numpy.uint8)
@@ -160,6 +160,14 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
         adr = normalize(data[:, ColorColumns]) * 255
         colors = adr.astype(numpy.uint8)
         labels = data[:, columnOfLabels].astype(numpy.uint8)
+
+        if(len( ColorColumns ) >= 3 ):
+            adr = normalize(data[:, ColorColumns]) * 255
+        else: # Fit the positions 2,3 of features with Zeros
+            cols2eval = data[ :, ColorColumns ]
+            d2fit = numpy.zeros( (data.shape[0], 3-len(ColorColumns) ), dtype=numpy.uint8 )
+            cols2eval = numpy.concatenate( ( cols2eval, d2fit ), axis=1 )
+            adr = normalize( cols2eval ) * 255
     else:
         exit("unknown protocol")
 
@@ -167,9 +175,10 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
 
     if(verbose):
         print("  -> Points shape: %s" %( str(points.shape) ) )
-        print("  -> Features shape: %s" %( str(colors.shape) ))
+        print("  -> Features shape: %s" %( str(colors.shape) ) )
         print("  -> Found lables: %s" %( str( numpy.unique( labels ) ) ) )
         print("  -> ply order: %s" %( str( field_names ) ) )
+        print("  -> Feature columns: %s" %( str( cols2eval ) ) )
 
     full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
