@@ -157,10 +157,6 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
         labels = data[:, columnOfLabels].astype(numpy.uint8)
     elif(protocol == "field" or protocol=="synthetic_colors"):
-        adr = normalize(data[:, ColorColumns]) * 255
-        colors = adr.astype(numpy.uint8)
-        labels = data[:, columnOfLabels].astype(numpy.uint8)
-
         if(len( ColorColumns ) >= 3 ):
             adr = normalize(data[:, ColorColumns]) * 255
         else: # Fit the positions 2,3 of features with Zeros
