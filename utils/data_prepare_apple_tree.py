@@ -26,7 +26,7 @@ def normalize(adr):
     return adr
 
 
-def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
+def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field", ColorColumns=[3,4,5], verbose=True):
     """
     Load a txt file that contain a Point Cloud and generted their related KDtree and 
     pyl file.
@@ -41,6 +41,8 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
             - field: If the point clouds have XYZ+Radiometric+Annotations and in the output all the features
                      want to be conserved 
             - synthetic: If the point cloud only have the XYZ coordinates 
+        ColorColumns: list, list of columns were are the colors or other features of the point clouds 
+        verbose: bool, if true, print few message to know the development of each step 
     :OUTPUT:
         The fuction will create a folder called 'input_GRID_SIZE' were are going to be 
         the kdtree rerpesentation and differet pkl representation of the cloud.
@@ -64,15 +66,24 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
     if protocol == "synthetic" or protocol == "field_only_xyz":
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-    elif protocol == "field":
-        colBeforeAnn = points.shape[1]-2
-        adr = normalize(data[:, 3:colBeforeAnn]) * 255
+    elif protocol == "field" or protocol=="synthetic_colors":
+        if(len( ColorColumns ) >= 3 ):
+            adr = normalize(data[:, ColorColumns]) * 255
+        else: # Fit the positions 2,3 of features with Zeros
+            cols2eval = data[ :, ColorColumns ]
+            d2fit = numpy.zeros( (data.shape[0], 3-len(ColorColumns) ), dtype=numpy.uin8 )
+            cols2eval = numpy.concatenate( ( cols2eval, d2fit ), axis=1 )
+            adr = normalize( cols2eval ) * 255
         colors = adr.astype(numpy.uint8)
     else:
         exit("unknown protocol")
 
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue']
 
+    if(verbose):
+        print("  -> Points shape: %s" %( str(points.shape) ) )
+        print("  -> Features shape: %s" %( str(colors.shape) ))
+        print("  -> ply order: %s" %( str( field_names ) ) )
     #Save original
     full_ply_path = os.path.join(original_pc_folder, basename + '.ply')
     helper_ply.write_ply(full_ply_path, [points, colors], field_names)
@@ -96,7 +107,7 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field"):
         pickle.dump([proj_idx, labels], f)
 
 
-def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field"):
+def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protocol="field", columnOfLabels=6, ColorColumns=[3,4,5], verbose=True):
     """
     Load a txt file that contain a Point Cloud and generted their related KDtree and 
     pyl file. 
@@ -111,6 +122,8 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
             - field: If the point clouds have XYZ+Radiometric+Annotations and in the output all the features and annotations
                      want to be conserved 
             - synthetic: If the point cloud only have the XYZ coordinates 
+        columnOfLabels: Column where are the annotations of the points
+        ColorColumns: list, list of the columns that have the colors or other features of the point clouds 
     :OUTPUT:
         The fuction will create a folder called 'input_GRID_SIZE' were are going to be 
         the kdtree rerpesentation and differet pkl representation of the cloud.
@@ -136,24 +149,27 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     data = numpy.loadtxt(filename)
 
     points = data[:, 0:3].astype(numpy.float32)
-    if protocol == "synthetic":
+    if(protocol == "synthetic"):
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-        colOfLabels = data.shape[1]-1 
-        labels = data[:, colOfLabels].astype(numpy.uint8)
-    elif protocol == "field_only_xyz":
-        colOfLabels = data.shape[1]-2
+        labels = data[:, columnOfLabels].astype(numpy.uint8)
+    elif(protocol == "field_only_xyz"):
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
-        labels = data[:, colOfLabels].astype(numpy.uint8)
-    elif protocol == "field":
-        colOfLabels = data.shape[1]-2
-        adr = normalize(data[:, 3:colOfLabels]) * 255
+        labels = data[:, columnOfLabels].astype(numpy.uint8)
+    elif(protocol == "field" or protocol=="synthetic_colors"):
+        adr = normalize(data[:, ColorColumns]) * 255
         colors = adr.astype(numpy.uint8)
-        labels = data[:, -1].astype(numpy.uint8)
+        labels = data[:, columnOfLabels].astype(numpy.uint8)
     else:
         exit("unknown protocol")
 
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue', 'class']
+
+    if(verbose):
+        print("  -> Points shape: %s" %( str(points.shape) ) )
+        print("  -> Features shape: %s" %( str(colors.shape) ))
+        print("  -> Found lables: %s" %( str( numpy.unique( labels ) ) ) )
+        print("  -> ply order: %s" %( str( field_names ) ) )
 
     full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
@@ -164,7 +180,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     helper_ply.write_ply(full_ply_path, (points, colors, labels), field_names)
 
     # save sub_cloud and KDTree file
-    sub_xyz, sub_colors, sub_labels = DP.grid_sub_sampling(points, colors, labels, grid_size)
+    sub_xyz, sub_colors, sub_labels = DP.grid_sub_sampling(points, features=colors, labels=labels, grid_size=grid_size)
     sub_colors = sub_colors / 255.0
     sub_labels = numpy.squeeze(sub_labels)
     sub_ply_file = os.path.join(sub_pc_folder, basename + '.ply')
@@ -181,125 +197,43 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     with open(proj_save, 'wb') as f:
         pickle.dump([proj_idx, labels], f)
 
-
-def prepare_data_field():
-    
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field"
-    grid_size = 0.001
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    # Generate Training data
-    for i in range(1, 6):
-        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}/".format(i)
-
-        training_filenames = glob.glob(input_dir + "*.txt")
-        print(training_filenames, sep="\n")
-        for filename in training_filenames:
-            print(filename, flush=True)
-            convert_for_training(filename, i, output_dir, outgrid_size=grid_size, protocol="field")
-
-    # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test/"
-    training_basename = [os.path.basename(f) for f in training_filenames]
-
-    test_filenames = glob.glob(input_dir + "*.txt")
-    print(test_filenames, sep="\n")
-    for filename in test_filenames:
-        if os.path.basename(filename) in training_basename:
-            print("not this one", filename, flush=True)
-            continue
-
-        print(filename, flush=True)
-        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="field")
-
-
-def prepare_data_field_only_xyz():
-    output_dir = "/gpfswork/rech/wwk/uqr22pt/data_RandLa-Net/apple_tree_field_only_xyz_2"
-    grid_size = 0.001
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    # Generate Training data
-    for i in range(1, 6):
-        input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/fold_{}/".format(i)
-        training_filenames = glob.glob(input_dir + "*.txt")
-        print(training_filenames, sep="\n")
-        for filename in training_filenames:
-            print(filename, flush=True)
-            convert_for_training(filename, i, output_dir, grid_size=grid_size, protocol="field_only_xyz")
-
-    # Generate test data
-    input_dir = "/gpfswork/rech/wwk/uqr22pt/data_field/test/"
-    training_basename = [os.path.basename(f) for f in training_filenames]
-
-    test_filenames = glob.glob(input_dir + "*.txt")
-    print(test_filenames, sep="\n")
-    for filename in test_filenames:
-        if os.path.basename(filename) in training_basename:
-            print("not this one", filename, flush=True)
-            continue
-
-        print(filename, flush=True)
-        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="field_only_xyz")
-
-
-def prepare_data_synthetic():
-    output_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/prepare2randlanet/"
-    grid_size = 0.001
-
-    if not os.path.exists(output_dir):
-        os.mkdir(output_dir)
-
-    # Generate Training data
-    for i in range(1, 6):
-        input_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/kfolds/fold_{}/".format(i)
-        training_filenames = glob.glob(input_dir + "*.txt")
-        print(training_filenames, sep="\n")
-        for filename in training_filenames:
-            print(filename, flush=True)
-            convert_for_training(filename, i, output_dir, grid_size=grid_size, protocol="synthetic")
-
-    # Generate test data
-    input_dir = "/home/jprb/Documents/test_exp/low_res_sres_0004/all_splitted/manual_splitted/ntrain/kfolds/test/"
-    training_basename = [os.path.basename(f) for f in training_filenames]
-
-    test_filenames = glob.glob(input_dir + "*.txt")
-    print(test_filenames, sep="\n")
-    for filename in test_filenames:
-        if os.path.basename(filename) in training_basename:
-            print("not this one", filename, flush=True)
-            continue
-
-        print(filename, flush=True)
-        convert_for_test(filename, output_dir, grid_size=grid_size, protocol="synthetic") 
-
-def prepare_data_generic(path2data, path2output, grid_size=0.001, verbose=False, protocol="synthetic", dataset="train"):
+def prepare_data_generic(path2data, path2output, grid_size=0.001, verbose=False, protocol="synthetic", dataset="train", annCol=3, colorCol=[3,4,5]):
+    """
+    Prepare the data for the RandLA-Net Model
+    :INPUT:
+        path2data: str, Path to the folder with the point clouds on *.txt format 
+        path2output: str, Path to the folder where have to be written the processed files [*.ply, *.pkl]
+        grid_size: float, Size of each block of the grid , default, 0.001
+        verbose: bool, if true print messages related to the evolution of the script 
+        protocol: str, Name of the protocol to prepare, synthetic/field/field_only_xyz/synthetic_colors
+        dataset: str, Type of the dataset to prepare, test or train. If test the annotatios are remove 
+        annCol: int, Index of the column where are located the annotations 
+        colorCol: list, List of the columns with some features of the point cloud, default [3,4,5]
+    """
     # Get the fail list 
     lst_fls = glob.glob(path2data + "*.txt")
     for idx, a_file in enumerate(lst_fls, start=1):
         if(verbose):
             print("-> Loading[%i/%i]: %s" %(len(lst_fls), idx, a_file))
         if(dataset=="train"):
-            convert_for_training(a_file, None, path2output, protocol=protocol, grid_size=grid_size)
+            convert_for_training(a_file, None, path2output, protocol=protocol, grid_size=grid_size, columnOfLabels=annCol, ColorColumns=colorCol)
         elif(dataset=="test"):
-            convert_for_test(a_file, path2output, grid_size=grid_size, protocol=protocol)
+            convert_for_test(a_file, path2output, grid_size=grid_size, protocol=protocol, ColorColumns=colorCol)
         else:
             raise ValueError("ERROR: Unknown option - %s" %dataset)
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Prepare the point clouds for the randlanet model")
     parser.add_argument("inputDir", type=str, help="Path to the directory with the point clouds")
-    parser.add_argument("--outputDir", type=str, help="Path to write the new files", default="./output")
-    parser.add_argument("--gridSize", type=str, help="--", default=0.001)
-    parser.add_argument("--verbose", type=bool, help="Show verbose of each step", default=True)
-    parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz", default="synthetic")
-    parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test", default="train")
+    parser.add_argument("--outputDir", type=str, help="Path to write the new files,  default=./output", default="./output")
+    parser.add_argument("--gridSize", type=str, help="Grid size to split the point cloud, default=0.001", default=0.001)
+    parser.add_argument("--verbose", help="Show verbose of each step", action="store_true", default=False)
+    parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz, default=synthetic", default="synthetic")
+    parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test. Default=train", default="train")
+    parser.add_argument("--annColumn", type=int, help="Column with the annotated labels, default=6", default=3)
+    parser.add_argument("--featureCols", type=str, help="Column Id of the point features, default = [3,4,5]", default=[3,4,5])
     args = parser.parse_args()
     print("-> Prepare data to randlanet model")
-    prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType)
-    #prepare_data_field()
-    #prepare_data_field_only_xyz()
-    #prepare_data_synthetic()
+    feature_col = args.featureCols.split(",")
+    feature_col = [ int(i) for i in feature_col ]
+    prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType, annCol=args.annColumn, colorCol=feature_col)
