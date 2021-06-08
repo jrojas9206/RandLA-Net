@@ -165,7 +165,8 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
             adr = normalize( cols2eval ) * 255
     else:
         exit("unknown protocol")
-
+        
+    colors = adr.astype( numpy.uint8 )
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue', 'class']
 
     if(verbose):
