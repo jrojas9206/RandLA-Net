@@ -178,7 +178,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
         print("  -> Features shape: %s" %( str(colors.shape) ) )
         print("  -> Found lables: %s" %( str( numpy.unique( labels ) ) ) )
         print("  -> ply order: %s" %( str( field_names ) ) )
-        print("  -> Feature columns: %s" %( str( cols2eval ) ) )
+        print("  -> Feature columns: %s" %( str( ColorColumns ) ) )
 
     full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
