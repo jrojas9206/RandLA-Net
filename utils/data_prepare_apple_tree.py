@@ -156,6 +156,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
         adr = colors
     elif(protocol == "field_only_xyz"):
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
+        adr = colors
     elif(protocol == "field" or protocol=="synthetic_colors"):
         if(len( ColorColumns ) >= 3 ):
             adr = normalize(data[:, ColorColumns]) * 255
