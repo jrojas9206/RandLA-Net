@@ -153,6 +153,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     if(protocol == "synthetic"):
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
+        adr = colors
     elif(protocol == "field_only_xyz"):
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
     elif(protocol == "field" or protocol=="synthetic_colors"):
