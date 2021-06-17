@@ -236,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz, default=synthetic", default="synthetic")
     parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test. Default=train", default="train")
     parser.add_argument("--annColumn", type=int, help="Column with the annotated labels, default=6", default=3)
-    parser.add_argument("--featureCols", type=str, help="Column Id of the point features, default = [3,4,5]", default=[3,4,5])
+    parser.add_argument("--featureCols", type=str, help="Column Id of the point features, default = [3,4,5]", default=str([3,4,5]))
     args = parser.parse_args()
     print("-> Prepare data to randlanet model")
     feature_col = args.featureCols.split(",")
