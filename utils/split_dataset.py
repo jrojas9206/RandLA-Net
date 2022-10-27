@@ -1,11 +1,12 @@
 import os 
 import sys
+import math
 import glob  
 import random
 import argparse
-from threading import activeCount 
 import numpy as np 
 from shutil import copy 
+from multiprocessing import Process
 #from sklearn.model_selection import train_test_split
 
 def verify_folders(args):
@@ -47,13 +48,40 @@ def split_my_dataset(args):
         if(not os.path.isdir(path2out)):
             print("  -%s folder doesn't exist, it will be created: %s" %(a_folder, path2out))
             os.mkdir(path2out)
-        separate_data_into_folders(a_data, 
-                                   path2out, 
-                                   as_npy=args.saveAsnpy, 
-                                   merge_instance=args.merge_instance, 
-                                   label_column=args.label_column, 
-                                   remove_label=args.remove_label)
-    return train_list, test_list
+        if(args.cores==1):
+            separate_data_into_folders( a_data, 
+                                        path2out, 
+                                        as_npy=args.saveAsnpy, 
+                                        merge_instance=args.merge_instance, 
+                                        label_column=args.label_column, 
+                                        remove_label=args.remove_label)
+        else:
+            batches = split_on_batches_per_core(a_data, args.cores)
+    return batches
+
+def split_on_batches_per_core(data_list, number_of_cores):
+    """
+    """
+    batch_size = math.floor(len(data_list)/(number_of_cores))
+    print("Batch size: %.2f" %(batch_size))
+    start = 0
+    end = batch_size
+    lst2return = []
+    for a_core in range(number_of_cores):
+        print("---Batch to core: %i------" %(a_core))
+        tmp_list = []
+        print("Start: %i" %(start))
+        print("End: %i" %(end))
+        for idx, list_idx in enumerate(range(start, end)):
+            tmp_list.append(data_list[list_idx])
+            if(idx == batch_size-1):
+                start = list_idx
+                end   = start+batch_size
+                if(end-1 > len(data_list)):
+                    end = len(data_list)
+    
+        lst2return.append(tmp_list)
+    return lst2return
 
 def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, merge_instance=False, label_column=3, remove_label=False):
     """
@@ -93,6 +121,7 @@ def main():
     parser.add_argument("--merge_instance", help="Take all the elements different to 0 and merge them in one single class", action="store_true")
     parser.add_argument("--label_column", type=int, help="Column with the instance annotations, default:3", default=3)
     parser.add_argument("--remove_label", help="Remove the label from the point clouds", action="store_true")
+    parser.add_argument("--cores", type=int, help="Number of cores to achieve the desired task, if -1 is set all the cores are going to be used, default:1", default=1)
     args = parser.parse_args()
 
     folder_stat = verify_folders(args)
@@ -105,4 +134,14 @@ def main():
     return 0
 
 if(__name__=="__main__"):
-    sys.exit(main())
+    #sys.exit(main())
+    # Test 
+    print("test")
+    lst = glob.glob(os.path.join("/home/juan/Downloads/to_test_my_scripts/", "*.txt"))
+    print(lst)
+    if(len(lst)==0):
+        print("error")
+        sys.exit()
+    print("len list: %i" %(len(lst)))
+    batches = split_on_batches_per_core( lst, number_of_cores=3 )
+    print(len(batches[0]))
