@@ -57,21 +57,32 @@ def split_my_dataset(args):
                                         remove_label=args.remove_label)
         else:
             batches = split_on_batches_per_core(a_data, args.cores)
+            list_process = []
+            for a_core in range(args.cores):
+                p = Process(target=separate_data_into_folders, args=(batches[a_core], 
+                                                                     path2out, 
+                                                                     a_core, 
+                                                                     args.saveAsnpy, 
+                                                                     args.merge_instance, 
+                                                                     args.label_column, 
+                                                                     args.remove_label))
+                list_process.append(p)
+            for a_process in list_process:
+                a_process.start()
+            for a_process in list_process:
+                a_process.join()
     return batches
+
 
 def split_on_batches_per_core(data_list, number_of_cores):
     """
     """
     batch_size = math.floor(len(data_list)/(number_of_cores))
-    print("Batch size: %.2f" %(batch_size))
     start = 0
     end = batch_size
     lst2return = []
-    for a_core in range(number_of_cores):
-        print("---Batch to core: %i------" %(a_core))
+    for _ in range(number_of_cores):
         tmp_list = []
-        print("Start: %i" %(start))
-        print("End: %i" %(end))
         for idx, list_idx in enumerate(range(start, end)):
             tmp_list.append(data_list[list_idx])
             if(idx == batch_size-1):
@@ -79,7 +90,6 @@ def split_on_batches_per_core(data_list, number_of_cores):
                 end   = start+batch_size
                 if(end-1 > len(data_list)):
                     end = len(data_list)
-    
         lst2return.append(tmp_list)
     return lst2return
 
@@ -89,7 +99,10 @@ def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, mer
     for idx, a_file in enumerate(data_list, start=1):
         file_name_ref = os.path.split(a_file)[-1]
         if(as_npy or merge_instance or remove_label):
-            print("-Copying[%i/%i]: %s" %(idx, len(data_list), "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")))
+            if(ref==-1):
+                print("-Copying[%i/%i]: %s" %(idx, len(data_list), "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")))
+            else:
+                print("-Copying[%i/%i][core:%i]: %s" %(idx, len(data_list), ref, "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")))
             new_pos = os.path.join(output_path, "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")) 
             try:
                 actual_point_cloud = np.loadtxt(a_file)
@@ -106,7 +119,10 @@ def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, mer
                 np.savetxt(new_pos, actual_point_cloud, delimiter=",", fmt="%.6f")
         else:
             new_pos = os.path.join(output_path, file_name_ref)
-            print("-Copying[%i/%i]: %s" %(idx, len(data_list), file_name_ref))
+            if(ref==-1):
+                print("-Copying[%i/%i]: %s" %(idx, len(data_list), file_name_ref))
+            else:
+                print("-Copying[%i/%i][core:%i]: %s" %(idx, len(data_list), ref, "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")))
             copy(a_file, new_pos)
     return 0
 
@@ -133,15 +149,15 @@ def main():
 
     return 0
 
+### Test
+
+def test_split_on_batches_per_core():
+    lst = range(0,100)
+    batches = split_on_batches_per_core( lst, number_of_cores=5 )
+    # debug
+    assert len(batches)==5, "The batch list doesn't have the expected size - 5"
+    assert len(batches[-1])==20, "The last batch of data doesn't have the expected size - 20"
+
 if(__name__=="__main__"):
-    #sys.exit(main())
-    # Test 
-    print("test")
-    lst = glob.glob(os.path.join("/home/juan/Downloads/to_test_my_scripts/", "*.txt"))
-    print(lst)
-    if(len(lst)==0):
-        print("error")
-        sys.exit()
-    print("len list: %i" %(len(lst)))
-    batches = split_on_batches_per_core( lst, number_of_cores=3 )
-    print(len(batches[0]))
+    sys.exit(main())
+    #test_split_on_batches_per_core()
