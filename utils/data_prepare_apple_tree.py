@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 import numpy
 import os
 import glob
@@ -59,7 +60,10 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field", Co
         os.mkdir(sub_pc_folder)
     basename = os.path.basename(filename)[:-4]
     # LOAD FILE
-    data = numpy.loadtxt(filename)
+    try:
+        data = numpy.loadtxt(filename)
+    except ValueError as err:
+        data = numpy.loadtxt(filename, delimiter=",")
     # XYZ
     points = data[:, 0:3].astype(numpy.float32)
     # Create the variable to split the color or the radiometric features 
@@ -81,9 +85,10 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field", Co
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue']
 
     if(verbose):
-        print("  -> Points shape: %s" %( str(points.shape) ) )
-        print("  -> Features shape: %s" %( str(colors.shape) ))
-        print("  -> ply order: %s" %( str( field_names ) ) )
+        print("  -> Filename: %s" %(filename))
+        print("    -> Points shape: %s" %( str(points.shape) ) )
+        print("    -> Features shape: %s" %( str(colors.shape) ))
+        print("    -> ply order: %s" %( str( field_names ) ) )
     #Save original
     full_ply_path = os.path.join(original_pc_folder, basename + '.ply')
     helper_ply.write_ply(full_ply_path, [points, colors], field_names)
@@ -150,6 +155,7 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
 
     points = data[:, 0:3].astype(numpy.float32)
     labels = data[:, columnOfLabels].astype(numpy.uint8)
+
     if(protocol == "synthetic"):
         # TODO : hack must be remove
         colors = numpy.zeros((data.shape[0], 3), dtype=numpy.uint8)
@@ -172,11 +178,13 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
     field_names = ['x', 'y', 'z', 'red', 'green', 'blue', 'class']
 
     if(verbose):
-        print("  -> Points shape: %s" %( str(points.shape) ) )
-        print("  -> Features shape: %s" %( str(colors.shape) ) )
-        print("  -> Found lables: %s" %( str( numpy.unique( labels ) ) ) )
-        print("  -> ply order: %s" %( str( field_names ) ) )
-        print("  -> Feature columns: %s" %( str( ColorColumns ) ) )
+        print("  -> Filename: %s" %(filename))
+        print("   -> Points shape: %s" %( str(points.shape) ) )
+        print("   -> Features shape: %s" %( str(colors.shape) ) )
+        print("   -> Found lables: %s" %( str( numpy.unique( labels ) ) ) )
+        print("      -> %i" %( int(labels.shape[0]) ))
+        print("   -> ply order: %s" %( str( field_names ) ) )
+        print("   -> Feature columns: %s" %( str( ColorColumns ) ) )
 
     full_ply_path = os.path.join(fold_output_dir, basename + '.ply')
 
@@ -237,7 +245,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", help="Show verbose of each step", action="store_true", default=False)
     parser.add_argument("--ExpProtocol", type=str, help="Data over you apply the script, synthetic, field, field_only_xyz, default=synthetic", default="synthetic")
     parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test. Default=train", default="train")
-    parser.add_argument("--annColumn", type=int, help="Column with the annotated labels, default=6", default=3)
+    parser.add_argument("--annColumn", type=int, help="Column with the annotated labels, default=6", default=6)
     parser.add_argument("--featureCols", type=str, help="Column Id of the point features, default = [3,4,5]", default="3,4,5")
     args = parser.parse_args()
     print("-> Prepare data to randlanet model")
