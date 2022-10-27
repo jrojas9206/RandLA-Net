@@ -64,6 +64,7 @@ def convert_for_test(filename, output_dir, grid_size=0.001, protocol="field", Co
         data = numpy.loadtxt(filename)
     except ValueError as err:
         data = numpy.loadtxt(filename, delimiter=",")
+    
     # XYZ
     points = data[:, 0:3].astype(numpy.float32)
     # Create the variable to split the color or the radiometric features 
@@ -151,7 +152,10 @@ def convert_for_training(filename, num_fold, output_dir, grid_size=0.001, protoc
 
     basename = os.path.basename(filename)[:-4]
 
-    data = numpy.loadtxt(filename)
+    try:
+        data = numpy.loadtxt(filename)
+    except ValueError as err:
+        data = numpy.loadtxt(filename, delimiter=",")
 
     points = data[:, 0:3].astype(numpy.float32)
     labels = data[:, columnOfLabels].astype(numpy.uint8)
