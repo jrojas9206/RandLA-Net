@@ -105,14 +105,14 @@ class ConfigSemantic3D:
 
 
 class ConfigAppleTreeField:
-    k_n = 16  # KNN
+    k_n = 8  #16 KNN
     num_layers = 5  # Number of layers
-    num_points = 65536  # Number of input points - Field
+    num_points = 50000  #65536  # Number of input points - Field
     num_classes = 2  # Number of valid classes
-    sub_grid_size = 0.001  # preprocess_parameter
+    sub_grid_size = 0.1  # 0.001  preprocess_parameter
 
     batch_size = 8 # 4 - batch_size during training
-    val_batch_size = 32  # batch_size during validation and test
+    val_batch_size = 8  # batch_size during validation and test
     train_steps = 500  # Number of steps per epochs
     val_steps = 100  # Number of validation steps per epoch
 
@@ -121,7 +121,7 @@ class ConfigAppleTreeField:
     d_out = [16, 64, 128, 256, 512]  # feature dimension
 
     noise_init = 3.5  # noise initial parameter
-    max_epoch = 100  # 100 - maximum epoch during training
+    max_epoch = 200  # 100 - maximum epoch during training
     learning_rate = 1e-2  # initial learning rate
     lr_decays = {i: 0.95 for i in range(0, 500)}  # decay rate of learning rate
 
@@ -142,21 +142,21 @@ class ConfigAppleTreeField:
 class ConfigAppleTreeSynthetic:
     k_n = 16  # KNN
     num_layers = 5  # Number of layers
-    num_points = 32768  # Number of input points - Synthetic
+    num_points = 50000  # Number of input points - Synthetic
     num_classes = 2  # Number of valid classes
     sub_grid_size = 0.001  # preprocess_parameter
 
     batch_size = 8 # 4 - batch_size during training
     val_batch_size = 32  # batch_size during validation and test
     train_steps = 500  # Number of steps per epochs
-    val_steps = 100  # Number of validation steps per epoch
+    val_steps = 200  # Number of validation steps per epoch
 
     # sampling ratio of random sampling at each layer
     sub_sampling_ratio = [4, 4, 4, 4, 2]
     d_out = [16, 64, 128, 256, 512]  # feature dimension
 
     noise_init = 3.5  # noise initial parameter
-    max_epoch = 100  # 100 - maximum epoch during training
+    max_epoch = 70  # 100 - maximum epoch during training
     learning_rate = 1e-2  # initial learning rate
     lr_decays = {i: 0.95 for i in range(0, 500)}  # decay rate of learning rate
 
