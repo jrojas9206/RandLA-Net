@@ -448,14 +448,14 @@ def train_field_only_xyz(inputDir, outputDir, parameters=None):
     cfg = cfg_field
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)
-    launch_training("field_only_xyz", inputDir, parameters=param)
+    launch_training("field_only_xyz", inputDir, parameters=parameters)
 
 def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     global cfg
     cfg = cfg_synthetic
     cfg.saving_path = outputDir
     print(cfg.saving_path, flush=True)    
-    launch_training("synthetic_HiHiRes", inputDir, parameters=param)
+    launch_training("synthetic_HiHiRes", inputDir, parameters=parameters)
 
 if __name__ == '__main__':
     parser.add_argument('--gpu', type=int, default=0, help='GPU ID [default: 0]')
