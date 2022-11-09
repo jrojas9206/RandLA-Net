@@ -468,7 +468,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
-             "path2output": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain} 
+             "outputDir": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain} 
     print("-> RandLA-NET")
     print(" -> GPU[ID]: %i" %args.gpu)
     print(" -> Mode[train/test/vis]: %s" %args.mode)
