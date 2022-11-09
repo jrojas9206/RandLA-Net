@@ -13,8 +13,9 @@ def log_string(out_str, log_out):
 
 
 class ModelTester:
-    def __init__(self, model, dataset, restore_snap=None):
+    def __init__(self, model, dataset, restore_snap=None, outname_exp=None):
         # Tensorflow Saver definition
+        self.my_output= outname_exp
         my_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         self.saver = tf.train.Saver(my_vars, max_to_keep=100)
 
@@ -49,7 +50,7 @@ class ModelTester:
 
         # Test saving path
         saving_path = time.strftime('results/Log_%Y-%m-%d_%H-%M-%S', time.gmtime())
-        test_path = join('test', saving_path.split('/')[-1])
+        test_path = join('test', "%s_%s" %(self.my_output,saving_path.split('/')[-1]))
         makedirs(test_path) if not exists(test_path) else None
         makedirs(join(test_path, 'predictions')) if not exists(join(test_path, 'predictions')) else None
         makedirs(join(test_path, 'probs')) if not exists(join(test_path, 'probs')) else None

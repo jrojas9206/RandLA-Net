@@ -34,7 +34,7 @@ class AppleTree:
         else:
             exit("wrong protocol")
         self.label_to_names = {0: 'unlabeled',
-                               1: 'apple'}
+                               1: 'leave'}
                                
         self.num_classes = len(self.label_to_names)
         self.label_values = np.sort([k for k, v in self.label_to_names.items()])
@@ -417,7 +417,7 @@ def launch_training(protocol, inputDir, parameters=None):
             chosen_snap = os.path.join(snap_path, 'snap-{:d}'.format(chosen_step))
         
         print(chosen_snap)
-        tester = ModelTester(model, dataset, restore_snap=chosen_snap)
+        tester = ModelTester(model, dataset, restore_snap=chosen_snap, outname_exp=parameters["outputDir"])
         tester.test(model, dataset)
 
     else:
@@ -463,8 +463,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default='None', help='pretrained model path')
     parser.add_argument('--inputDir', type=str, help="Path to the folder with the train/test/validation & the input folders", default=None)
     parser.add_argument("--outputDir", type=str, help="Path to the output folder", default="./output/")
-    parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/field_xyz/filed", default="synthetic")
-    parser.add_argument("--restoreTrain", type=bool, help="Restore training True/False", default=False)
+    parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/ffield_only_xyz/field", default="synthetic")
+    parser.add_argument("--restoreTrain", help="Restore training True/False", action="store_true")
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
