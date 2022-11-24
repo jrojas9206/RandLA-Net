@@ -9,12 +9,23 @@ from multiprocessing import Process, Manager
 from sklearn.neighbors import KDTree
 
 def verify_paths(args):
+    """
+    Verify that the input and output folders exist 
+
+    :INPUT:
+        args: parser args got from the arparse package, 
+              NOTE: the expected variables are args.path2pointclouds  
+                    and args.path2out 
+    :OUT:
+        int, -1 if one or both of the folders doesn't exist 
+              0 if the the both folders exist 
+    """
     if(not os.path.isdir(Path(args.path2pointclouds).resolve())):
         print(" ->[ERROR] Input path was not found")
         return -1
     if(not os.path.isdir(args.path2out)):
         print(" ->[WARNING] Output folder was not found, it is going to be created")
-        os.mkdir(Path(os.path.path2out).resolve())
+        os.mkdir(Path(args.path2out).resolve())
         print("   -> Stat: OK")
     return 0
 
@@ -29,7 +40,7 @@ def get_point_cloud_density(pc, radius=0.1):
         pc: numpy array (N,3)
         radius: Distance to evaluate the nearest points, sphere radius 
     :OUTPUT:
-        float32
+        list of float32
     """
     # Get the KDtree representation of the point cloud 
     # and from it begin to estimate the densities 
@@ -41,7 +52,21 @@ def get_point_cloud_density(pc, radius=0.1):
     lstDens = nPts/( radius**2 )
     return lstDens
 
-def get_pointcloud_general_characteristics(lst_files, out, annColumn=3, radius=0.1, idx_core=-1):
+def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, idx_core=-1):
+    """
+    Get the density and the number of points of the referenced point clouds 
+
+    :INPUT:
+        lst_files: list, List with all the path to the files that must be processed 
+        annColumn: int,  Integer with the column number where are located the point labels 
+        radius   : float, float that represent the radius of the sphere used to calculate the point densities 
+        idx_core : int, integer used to know if the method have been called from a threat, -1 means single threat 
+                        in this case the model return a dictioray, if the idx_core > 1 it will write a set of json 
+                        files that contain the result of the analysis of the point clouds 
+    :OUT:
+        dict  if idx_core is equal to -1
+        write a file    if idx_core is bigger than 1
+    """
     dic2return = {}
     for idx, a_file in enumerate(lst_files, start=1):
         if(idx_core == -1):
@@ -64,11 +89,24 @@ def get_pointcloud_general_characteristics(lst_files, out, annColumn=3, radius=0
             dic2return["names"].append(os.path.split(a_file)[-1].split(".")[0])
             dic2return["number_of_points"].append(actual_pointcloud.shape[0])
             dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
-    out = dic2return
-    return dic2return
+    if(idx_core==-1):
+        return dic2return
+    else:
+        with open("report_core_%i.json" %(idx_core), 'w') as outfile:
+            outfile.write(dic2return)
+        print("-> Core-%i has finish" %(idx_core))
          
 def get_batches(lst, cores):
-    batches = int(floor(len(lst)/float(cores)))
+    """
+    Split the list in different batches to fit the defined number of cores 
+
+    :INPUT:
+        lst: list, list with the path to the files 
+        cores: int, integers grater or iqual to 1
+    :OUT:
+        list of lists  [[...],[...],[...]]
+    """
+    batches = cores # int(floor(len(lst)/float(cores)))
     batch_sz = int(len(lst)/batches)
     lck = True
     idx_cntr = 0
@@ -111,7 +149,7 @@ def main():
         return 0
     else:
         print("-> Defined folders: OK")
-    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))[:10]
+    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
@@ -121,21 +159,16 @@ def main():
     else:
         # Get batches, 
         batches = get_batches(lst_files, args.cores)
-        a_manager = []
         p_list = []
         # fit threats 
         for idx_core in range(args.cores):
-            a_manager.append(Manager().dict())
-            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], a_manager[idx_core], args.annColumn, args.radius, idx_core))
+            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core))
             p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
         for a_proc in p_list:
             a_proc.join()
-        # Merge results
-        for a_dic in a_manager:
-            print(a_dic)
-        
+        # Merge dic
 
     return 0 
 
