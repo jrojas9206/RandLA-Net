@@ -52,7 +52,7 @@ def get_point_cloud_density(pc, radius=0.1):
     lstDens = nPts/( radius**2 )
     return lstDens
 
-def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, idx_core=-1):
+def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, idx_core=-1, only_npoints=False):
     """
     Get the density and the number of points of the referenced point clouds 
 
@@ -84,11 +84,13 @@ def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, i
         if("names" not in dic2return.keys()):
             dic2return["names"] = [os.path.split(a_file)[-1].split(".")[0]]
             dic2return["number_of_points"] = [actual_pointcloud.shape[0]]
-            dic2return["avg_densities"] = [np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius)))]
+            if(only_npoints):
+                dic2return["avg_densities"] = [np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius)))]
         else:
             dic2return["names"].append(os.path.split(a_file)[-1].split(".")[0])
             dic2return["number_of_points"].append(actual_pointcloud.shape[0])
-            dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
+            if(only_npoints):
+                dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
     if(idx_core==-1):
         return dic2return
     else:
@@ -136,12 +138,14 @@ def main():
     parser = argparse.ArgumentParser("Verify the numper of points of the dataset")
     parser.add_argument("path2pointclouds", type=str, help=" ")
     parser.add_argument("path2out", type=str, help="Path to the output")
+    parser.add_argument("--outname", type=str, help="Name for the output file, default:report", default="report")
     parser.add_argument("--hist_name", type=str, help="Histogram Name, default: experiment", default="experiment")
     parser.add_argument("--history_name", type=str, help="History file name, default:history", default="history")
     parser.add_argument("--format", type=str, help="Point clouds format, default:txt", default="txt")
     parser.add_argument("--annColumn", type=int, help="Column of the labeled points, -1 mean there is no label column, default:-1", default=-1)
     parser.add_argument("--cores", type=int, help="Number of cores to use for the task, default:1", default=1)
     parser.add_argument("--radius", type=float, help="Radius of the sphere used to evaluate the point density , unit in meters, default:0.1", default=0.1)
+    parser.add_argument("--only_npoints", help="Get only the number of points", action="store_true")
     args = parser.parse_args()
     # Verify that the paths exist 
     stat_folders = verify_paths(args)
@@ -155,14 +159,17 @@ def main():
     else:
         print("[WARNING]-> Any file was found in the selected path: %s" %(args.path2pointclouds))
     if(args.cores == 1):
-        dic2save = get_pointcloud_general_characteristics(lst_files, args.annColumn, args.radius, 0)
+        dic2save = get_pointcloud_general_characteristics(lst_files, args.annColumn, args.radius, -1, args.only_npoints)
+        path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
+        with open(path2save, 'w') as outfile:
+            outfile.write(dic2save)
     else:
         # Get batches, 
         batches = get_batches(lst_files, args.cores)
         p_list = []
         # fit threats 
         for idx_core in range(args.cores):
-            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core))
+            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints))
             p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
