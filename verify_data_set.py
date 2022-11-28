@@ -1,11 +1,12 @@
 import os 
 import sys
 import glob 
-import json 
+import json
 import argparse
 import numpy as np 
 from math import floor
 from pathlib import Path
+from datetime import datetime
 from multiprocessing import Process, Manager
 from sklearn.neighbors import KDTree
 
@@ -174,6 +175,7 @@ def main():
     parser.add_argument("--radius", type=float, help="Radius of the sphere used to evaluate the point density , unit in meters, default:0.1", default=0.1)
     parser.add_argument("--only_npoints", help="Get only the number of points", action="store_true")
     args = parser.parse_args()
+    start_time = datetime.now()
     # Verify that the paths exist 
     stat_folders = verify_paths(args)
     if(stat_folders==-1):
@@ -207,6 +209,8 @@ def main():
         path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
         with open(path2save, 'w') as outfile:
             json.dump(m_dict, outfile)
+    end_time = datetime.now()
+    print('Execution time: {}'.format(end_time - start_time))
     print("-> EXIT")
     return 0 
 
