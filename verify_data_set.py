@@ -138,16 +138,18 @@ def get_batches(lst, cores):
     return lst_batches
 
 def merge_dictionaries():
-    actual_working_path = Path(os.path.dirname(__file__)).resolve()
+    actual_working_path = os.path.join(Path(os.path.dirname(__file__)).resolve(),"test_report_merge_j02rw0_sres008")
     list_of_files = [all_elements for all_elements in os.listdir(actual_working_path) if
                      os.path.isfile( os.path.join(actual_working_path, all_elements))]
     selected_files = [a_file for a_file in list_of_files if("report_core_" in  a_file )]
     merged_dict = {}
     percentageMerge = 0
-    for idx, a_report in enumerate(selected_files, start=1):
+    idx_fake = 0
+    for idx, a_report in enumerate(selected_files):
         print(" -> preparing final report[%i/%i]" %(idx, len(selected_files)))
         file2load = os.path.join(actual_working_path, a_report)
-        percentageMerge = (idx/float(len(selected_files)))
+        idx_fake = idx_fake + 1
+        percentageMerge = (idx_fake/float(len(selected_files)))
         with open(file2load, "r") as report_file:
             dict_report = json.load(report_file)
         if(idx==0):
@@ -215,5 +217,7 @@ def main():
     return 0 
 
 if(__name__=="__main__"):
-    #sys.exit(merge_dictionaries())
-    sys.exit(main())
+    dic2test = merge_dictionaries()
+    with open("/media/juan/LaCie/results_densities/report.json", 'w') as outfile:
+        json.dump(dic2test, outfile)
+    #sys.exit(main())
