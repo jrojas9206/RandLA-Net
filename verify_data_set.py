@@ -90,15 +90,12 @@ def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, i
         else:
             
             dic2return["names"].append(os.path.split(a_file)[-1].split(".")[0])
-            print(len(dic2return["names"]))
             dic2return["number_of_points"].append(actual_pointcloud.shape[0])
             if(not only_npoints):
                 dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
-    print(dic2return)
     if(idx_core==-1):
         return dic2return
     else:
-        print(dic2return)
         with open("report_core_%i.json" %(idx_core), 'w') as outfile:
             json.dump(dic2return, outfile)
         print("-> Core-%i has finish" %(idx_core))
@@ -114,7 +111,7 @@ def get_batches(lst, cores):
         list of lists  [[...],[...],[...]]
     """
     batches = cores # int(floor(len(lst)/float(cores)))
-    batch_sz = int(len(lst)/batches)
+    batch_sz = int(len(lst)/batches) if (len(lst)>batches) else 1
     lck = True
     idx_cntr = 0
     lst_batches = []
@@ -144,26 +141,25 @@ def merge_dictionaries():
     list_of_files = [all_elements for all_elements in os.listdir(actual_working_path) if
                      os.path.isfile( os.path.join(actual_working_path, all_elements))]
     selected_files = [a_file for a_file in list_of_files if("report_core_" in  a_file )]
-    
-    for idx, a_report in enumerate(selected_files):
+    merged_dict = {}
+    percentageMerge = 0
+    for idx, a_report in enumerate(selected_files, start=1):
+        print(" -> preparing final report[%i/%i]" %(idx, len(selected_files)))
         file2load = os.path.join(actual_working_path, a_report)
-        merged_dict = {}
+        percentageMerge = (idx/float(len(selected_files)))
         with open(file2load, "r") as report_file:
             dict_report = json.load(report_file)
         if(idx==0):
+            print("  -> merged report started [%.2f%%]" %(percentageMerge))
             merged_dict = dict_report
-            print("ggg",merged_dict)
         else:
+            print("  -> concatenating [%.2f%%]" %(percentageMerge))
             for a_key in merged_dict.keys():
-                print("akey", a_key)
                 if(a_key in dict_report.keys()):
                     merged_dict[a_key] = merged_dict[a_key] + dict_report[a_key]
-                    print(a_key, merged_dict[a_key])
                 else:
                     merged_dict[a_key] = dict_report[a_key]
-    print(merged_dict)
-
-    return 0
+    return merged_dict
 
 def main():
     parser = argparse.ArgumentParser("Verify the numper of points of the dataset")
@@ -184,7 +180,7 @@ def main():
         return 0
     else:
         print("-> Defined folders: OK")
-    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))[:5]
+    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))[:10]
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
@@ -207,7 +203,11 @@ def main():
         for a_proc in p_list:
             a_proc.join()
         # Merge dic
-
+        m_dict = merge_dictionaries()
+        path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
+        with open(path2save, 'w') as outfile:
+            outfile.write(m_dict)
+    
     return 0 
 
 if(__name__=="__main__"):
