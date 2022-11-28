@@ -189,7 +189,7 @@ def main():
         dic2save = get_pointcloud_general_characteristics(lst_files, args.annColumn, args.radius, -1, args.only_npoints)
         path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
         with open(path2save, 'w') as outfile:
-            outfile.write(dic2save)
+            json.dump(dic2save, outfile)
     else:
         # Get batches, 
         batches = get_batches(lst_files, args.cores)
@@ -206,8 +206,8 @@ def main():
         m_dict = merge_dictionaries()
         path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
         with open(path2save, 'w') as outfile:
-            outfile.write(m_dict)
-    
+            json.dump(m_dict, outfile)
+    print("-> EXIT")
     return 0 
 
 if(__name__=="__main__"):
