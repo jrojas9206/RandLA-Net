@@ -180,7 +180,7 @@ def main():
         return 0
     else:
         print("-> Defined folders: OK")
-    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))[:10]
+    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
