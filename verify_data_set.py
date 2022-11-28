@@ -217,7 +217,7 @@ def main():
     return 0 
 
 if(__name__=="__main__"):
-    dic2test = merge_dictionaries()
-    with open("/media/juan/LaCie/results_densities/report.json", 'w') as outfile:
-        json.dump(dic2test, outfile)
-    #sys.exit(main())
+    #dic2test = merge_dictionaries()
+    #with open("/media/juan/LaCie/results_densities/report.json", 'w') as outfile:
+    #    json.dump(dic2test, outfile)
+    sys.exit(main())
