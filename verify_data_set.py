@@ -86,13 +86,13 @@ def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, i
             dic2return["names"] = [os.path.split(a_file)[-1].split(".")[0]]
             dic2return["number_of_points"] = [actual_pointcloud.shape[0]]
             if(not only_npoints):
-                dic2return["avg_densities"] = [np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius)))]
+                dic2return["avg_densities"] = [np.mean(np.array(get_point_cloud_density(actual_pointcloud[:,0:3], radius=radius)))]
         else:
             
             dic2return["names"].append(os.path.split(a_file)[-1].split(".")[0])
             dic2return["number_of_points"].append(actual_pointcloud.shape[0])
             if(not only_npoints):
-                dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
+                dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud[:,0:3], radius=radius))))
     if(idx_core==-1):
         return dic2return
     else:
