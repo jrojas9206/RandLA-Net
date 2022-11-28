@@ -1,6 +1,7 @@
 import os 
 import sys
 import glob 
+import json 
 import argparse
 import numpy as np 
 from math import floor
@@ -84,18 +85,22 @@ def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, i
         if("names" not in dic2return.keys()):
             dic2return["names"] = [os.path.split(a_file)[-1].split(".")[0]]
             dic2return["number_of_points"] = [actual_pointcloud.shape[0]]
-            if(only_npoints):
+            if(not only_npoints):
                 dic2return["avg_densities"] = [np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius)))]
         else:
+            
             dic2return["names"].append(os.path.split(a_file)[-1].split(".")[0])
+            print(len(dic2return["names"]))
             dic2return["number_of_points"].append(actual_pointcloud.shape[0])
-            if(only_npoints):
+            if(not only_npoints):
                 dic2return["avg_densities"].append(np.mean(np.array(get_point_cloud_density(actual_pointcloud, radius=radius))))
+    print(dic2return)
     if(idx_core==-1):
         return dic2return
     else:
+        print(dic2return)
         with open("report_core_%i.json" %(idx_core), 'w') as outfile:
-            outfile.write(dic2return)
+            json.dump(dic2return, outfile)
         print("-> Core-%i has finish" %(idx_core))
          
 def get_batches(lst, cores):
@@ -134,6 +139,32 @@ def get_batches(lst, cores):
     print("  -> Final conf: B-%i | Bsz[First&Last]:%i&%i | total: %i" %(len(lst_batches), len(lst_batches[0]), len(lst_batches[-1]), idx_cntr))
     return lst_batches
 
+def merge_dictionaries():
+    actual_working_path = Path(os.path.dirname(__file__)).resolve()
+    list_of_files = [all_elements for all_elements in os.listdir(actual_working_path) if
+                     os.path.isfile( os.path.join(actual_working_path, all_elements))]
+    selected_files = [a_file for a_file in list_of_files if("report_core_" in  a_file )]
+    
+    for idx, a_report in enumerate(selected_files):
+        file2load = os.path.join(actual_working_path, a_report)
+        merged_dict = {}
+        with open(file2load, "r") as report_file:
+            dict_report = json.load(report_file)
+        if(idx==0):
+            merged_dict = dict_report
+            print("ggg",merged_dict)
+        else:
+            for a_key in merged_dict.keys():
+                print("akey", a_key)
+                if(a_key in dict_report.keys()):
+                    merged_dict[a_key] = merged_dict[a_key] + dict_report[a_key]
+                    print(a_key, merged_dict[a_key])
+                else:
+                    merged_dict[a_key] = dict_report[a_key]
+    print(merged_dict)
+
+    return 0
+
 def main():
     parser = argparse.ArgumentParser("Verify the numper of points of the dataset")
     parser.add_argument("path2pointclouds", type=str, help=" ")
@@ -153,7 +184,7 @@ def main():
         return 0
     else:
         print("-> Defined folders: OK")
-    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))[:5]
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
@@ -180,4 +211,5 @@ def main():
     return 0 
 
 if(__name__=="__main__"):
+    #sys.exit(merge_dictionaries())
     sys.exit(main())
