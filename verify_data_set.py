@@ -176,6 +176,8 @@ def main():
     parser.add_argument("--cores", type=int, help="Number of cores to use for the task, default:1", default=1)
     parser.add_argument("--radius", type=float, help="Radius of the sphere used to evaluate the point density , unit in meters, default:0.1", default=0.1)
     parser.add_argument("--only_npoints", help="Get only the number of points", action="store_true")
+    parser.add_argument("--half_procs", type=int, help="Process the first hald or the second hald of the dataset, -1 process all, 0 to process the first half\
+                                                       1 to process the second half, default:-1", default=-1)
     args = parser.parse_args()
     start_time = datetime.now()
     # Verify that the paths exist 
@@ -184,7 +186,17 @@ def main():
         return 0
     else:
         print("-> Defined folders: OK")
-    lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+    if(args.half_procs==-1):
+        lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+    elif(args.half_procs==0):
+        lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+        lst_files = lst_files[:int(len(lst_files)/2)]
+    elif(args.half_procs==1):
+        lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+        lst_files = lst_files[int(len(lst_files)/2):]
+    else:
+        raise ValueError("Unknown option for the argument --half_procs, accepted values -1, 0, 1")
+        
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
