@@ -190,13 +190,17 @@ def main():
         lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
     elif(args.half_procs==0):
         lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+        print(" -> Original length: %i" %(len(lst_files)))
         lst_files = lst_files[:int(len(lst_files)/2)]
+        print(" -> selected half length: %i" %(len(lst_files)))
     elif(args.half_procs==1):
         lst_files = glob.glob(os.path.join(args.path2pointclouds, "*.%s" %(args.format)))
+        print(" -> Original length: %i" %(len(lst_files)))
         lst_files = lst_files[int(len(lst_files)/2):]
+        print(" -> selected half length: %i" %(len(lst_files)))
     else:
         raise ValueError("Unknown option for the argument --half_procs, accepted values -1, 0, 1")
-        
+
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
     else:
@@ -220,7 +224,15 @@ def main():
             a_proc.join()
         # Merge dic
         m_dict = merge_dictionaries()
-        path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
+        if(args.half_procs==-1):
+            path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
+        elif(args.half_procs==0):
+            path2save = os.path.join(args.path2out, "%s_1st_half.json" %(args.outname))
+        elif(args.half_procs==1):
+            path2save = os.path.join(args.path2out, "%s_2nd_half.json" %(args.outname))
+        else:
+            raise ValueError("[2] Unknown option for the argument --half_procs, accepted values -1, 0, 1")
+
         with open(path2save, 'w') as outfile:
             json.dump(m_dict, outfile)
     end_time = datetime.now()
