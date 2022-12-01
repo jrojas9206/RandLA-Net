@@ -54,7 +54,7 @@ def get_point_cloud_density(pc, radius=0.1):
     lstDens = nPts/( radius**2 )
     return lstDens
 
-def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, idx_core=-1, only_npoints=False):
+def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, idx_core=-1, only_npoints=False, ref_doc="report"):
     """
     Get the density and the number of points of the referenced point clouds 
 
@@ -97,7 +97,7 @@ def get_pointcloud_general_characteristics(lst_files, annColumn=3, radius=0.1, i
     if(idx_core==-1):
         return dic2return
     else:
-        with open("report_core_%i.json" %(idx_core), 'w') as outfile:
+        with open("%s_report_core_%i.json" %(ref_doc ,idx_core), 'w') as outfile:
             json.dump(dic2return, outfile)
         print("-> Core-%i has finish" %(idx_core))
          
