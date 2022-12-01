@@ -138,7 +138,7 @@ def get_batches(lst, cores):
     return lst_batches
 
 def merge_dictionaries():
-    actual_working_path = os.path.join(Path(os.path.dirname(__file__)).resolve(),"test_report_merge_j02rw0_sres008")
+    actual_working_path = Path(os.path.dirname(__file__)).resolve()
     list_of_files = [all_elements for all_elements in os.listdir(actual_working_path) if
                      os.path.isfile( os.path.join(actual_working_path, all_elements))]
     selected_files = [a_file for a_file in list_of_files if("report_core_" in  a_file )]
@@ -178,6 +178,7 @@ def main():
     parser.add_argument("--only_npoints", help="Get only the number of points", action="store_true")
     parser.add_argument("--half_procs", type=int, help="Process the first hald or the second hald of the dataset, -1 process all, 0 to process the first half\
                                                        1 to process the second half, default:-1", default=-1)
+    parser.add_argument("--refname", type=str, help="Reference name for the reports", default="ref")
     args = parser.parse_args()
     start_time = datetime.now()
     # Verify that the paths exist 
@@ -216,7 +217,7 @@ def main():
         p_list = []
         # fit threats 
         for idx_core in range(args.cores):
-            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints))
+            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
             p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
