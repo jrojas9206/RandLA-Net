@@ -225,7 +225,7 @@ def main():
         for a_proc in p_list:
             a_proc.join()
         # Merge dic
-        m_dict = merge_dictionaries()
+        m_dict = merge_dictionaries(ref=args.refname)
         if(args.half_procs==-1):
             path2save = os.path.join(args.path2out, "%s.json" %(args.outname))
         elif(args.half_procs==0):
