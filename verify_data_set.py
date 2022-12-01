@@ -137,11 +137,12 @@ def get_batches(lst, cores):
     print("  -> Final conf: B-%i | Bsz[First&Last]:%i&%i | total: %i" %(len(lst_batches), len(lst_batches[0]), len(lst_batches[-1]), idx_cntr))
     return lst_batches
 
-def merge_dictionaries():
+def merge_dictionaries(ref=""):
     actual_working_path = Path(os.path.dirname(__file__)).resolve()
     list_of_files = [all_elements for all_elements in os.listdir(actual_working_path) if
                      os.path.isfile( os.path.join(actual_working_path, all_elements))]
-    selected_files = [a_file for a_file in list_of_files if("report_core_" in  a_file )]
+    selected_files = [a_file for a_file in list_of_files if("%s_report_core_" %(ref) in  a_file )]
+    print("found reports  ", len(selected_files))
     merged_dict = {}
     percentageMerge = 0
     idx_fake = 0
