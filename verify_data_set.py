@@ -248,6 +248,10 @@ def main():
         print(" -> selected half length: %i" %(len(lst_files)))
     else:
         raise ValueError("Unknown option for the argument --half_procs, accepted values -1, 0, 1")
+    if(args.continueProcessing):
+        lst_cores_ok = get_unfinished_cores(args.refname)
+    else:
+        lst_cores_ok = range(args.cores)
 
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
@@ -264,15 +268,11 @@ def main():
             batches = get_batches(lst_files, args.cores)
         else:
             batches = continue_exp_with_files(lst_files, args.refname)
-            batches = get_batches(batches, args.cores)
+            batches = get_batches(batches, len(lst_cores_ok))
             print("  -> Final batches after verification: %i" %(len(batches)))
         p_list = []
         # fit threats 
         cntr = 0
-        if(args.continueProcessing):
-            lst_cores_ok = get_unfinished_cores(args.refname)
-        else:
-            lst_cores_ok = range(args.cores)
         for idx_core in lst_cores_ok:
             if(cntr>len(batches)):
                 print(" -> No batch for the actual core %i" %(idx_core))
