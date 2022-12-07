@@ -260,6 +260,7 @@ def main():
                 lst_cores2work.append(cntr)
             if(len(lst_cores2work) >= args.cores):
                 lck= False
+        lst_cores_ok = lst_cores2work
     else:
         lst_cores_ok = range(args.cores)
 
