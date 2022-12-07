@@ -170,6 +170,7 @@ def load_ref_report(refname):
     files_list = [out for out in files_list if not os.path.isdir(out)]
     files_list = [out for out in files_list if refname in out]
     lst2ret = []
+    print("  -> Found referenced reports: %i" %(len(files_list)))
     for a_file in files_list:
         with open(a_file, "r") as a_report:
             data = json.load(a_report)  
