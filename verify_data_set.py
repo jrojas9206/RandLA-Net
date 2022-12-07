@@ -195,6 +195,7 @@ def get_unfinished_cores(refname):
 
 
 def continue_exp_with_files(lst_files, refname):
+    base_path = Path(lst_files[0]).parent
     print("-> Looking for not processed files")
     lst_of_files = [os.path.split(out)[-1].split(".")[0] for out in lst_files]
     found_proc_files = load_ref_report(refname)
@@ -202,12 +203,10 @@ def continue_exp_with_files(lst_files, refname):
     files2batch = []
     for a_file in lst_of_files:
         if(a_file in found_proc_files):
-            print(a_file, found_proc_files[0])
             continue
         else:
-            files2batch.append(a_file)
+            files2batch.append(os.path.join(base_path, "%s.txt" %(a_file)))
     print("  -> Found unprocessed files: %i" %(len(files2batch)))
-    sys.exit()
     return files2batch
 
 
