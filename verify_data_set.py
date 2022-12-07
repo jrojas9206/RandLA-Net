@@ -165,6 +165,29 @@ def merge_dictionaries(ref=""):
                     merged_dict[a_key] = dict_report[a_key]
     return merged_dict
 
+def load_ref_report(refname):
+    files_list = os.listdir(Path(os.path.dirname(__file__)).resolve())
+    files_list = [out for out in files_list if not os.path.isdir(out)]
+    files_list = [out for out in files_list if refname in out]
+    lst2ret = []
+    for a_file in files_list:
+        with open(a_file, "r") as a_report:
+            data = json.load(a_report)  
+        if("names" in data.keys()):
+            lst2ret = lst2ret + data["names"]
+        else:
+            print("[WARNING] -> The file %s doesn't contain the expected key" %(a_file))
+    return lst2ret
+
+def continue_exp_with_files(lst_files, refname):
+    print("-> Looking for not processed files")
+    lst_of_files = [os.path.split(out)[-1].split(".")[0] for out in lst_files]
+    found_proc_files = load_ref_report(refname)
+    files2batch = [out for out in found_proc_files if out not in lst_of_files]
+    print("  -> Found files: %i" %(len(files2batch)))
+    return files2batch
+
+
 def main():
     parser = argparse.ArgumentParser("Verify the numper of points of the dataset")
     parser.add_argument("path2pointclouds", type=str, help=" ")
@@ -180,6 +203,7 @@ def main():
     parser.add_argument("--half_procs", type=int, help="Process the first hald or the second hald of the dataset, -1 process all, 0 to process the first half\
                                                        1 to process the second half, default:-1", default=-1)
     parser.add_argument("--refname", type=str, help="Reference name for the reports", default="ref")
+    parser.add_argument("--continueProcessing", help="Continue the analysis that was running", action="store_true")
     args = parser.parse_args()
     start_time = datetime.now()
     # Verify that the paths exist 
@@ -214,12 +238,20 @@ def main():
             json.dump(dic2save, outfile)
     else:
         # Get batches, 
-        batches = get_batches(lst_files, args.cores)
+        if(not args.continueProcessing):
+            batches = get_batches(lst_files, args.cores)
+        else:
+            batches = continue_exp_with_files(lst_files, args.refname)
+            batches = get_batches(batches, args.cores)
         p_list = []
         # fit threats 
         for idx_core in range(args.cores):
-            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
-            p_list.append(p)
+            if(idx_core>len(batches)):
+                print(" -> No batch for the actual core %i" %(idx_core))
+                continue
+            else:
+                p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
         for a_proc in p_list:
