@@ -199,8 +199,6 @@ def continue_exp_with_files(lst_files, refname):
     lst_of_files = [os.path.split(out)[-1].split(".")[0] for out in lst_files]
     found_proc_files = load_ref_report(refname)
     print("   -> Found processed files: %i" %(len(found_proc_files)))
-    print(found_proc_files)
-    print(lst_of_files)
     files2batch = []
     for a_file in lst_of_files:
         if(a_file in found_proc_files):
@@ -209,6 +207,7 @@ def continue_exp_with_files(lst_files, refname):
         else:
             files2batch.append(a_file)
     print("  -> Found unprocessed files: %i" %(len(files2batch)))
+    sys.exit()
     return files2batch
 
 
