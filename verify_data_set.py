@@ -179,6 +179,20 @@ def load_ref_report(refname):
             print("[WARNING] -> The file %s doesn't contain the expected key" %(a_file))
     return lst2ret
 
+def get_unfinished_cores(refname):
+    files_list = os.listdir(Path(os.path.dirname(__file__)).resolve())
+    files_list = [out for out in files_list if not os.path.isdir(out)]
+    files_list = [out.split(".")[0].split("_")[-1] for out in files_list if refname in out]
+    correct_cores = []
+    for a_file in files_list:
+        a_core = a_file.split(".")[0].split("_")[-1]
+        try:
+            correct_cores.append(int(a_core))
+        except ValueError as err:
+            print("    -> report name in a unexpected format: %s" %(a_file))
+    return correct_cores
+
+
 def continue_exp_with_files(lst_files, refname):
     print("-> Looking for not processed files")
     lst_of_files = [os.path.split(out)[-1].split(".")[0] for out in lst_files]
@@ -250,6 +264,13 @@ def main():
                 print(" -> No batch for the actual core %i" %(idx_core))
                 continue
             else:
+                if(args.continueProcessing):
+                    lst_cores_ok = get_unfinished_cores(args.refname)
+                    if(idx_core in lst_cores_ok):
+                        print(" -> core %i already finished" %(idx_core))
+                        continue
+                    else:
+                        print(" -> Continue process with core: %i" %(idx_core))
                 p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
                 p_list.append(p)
         for a_proc in p_list:
