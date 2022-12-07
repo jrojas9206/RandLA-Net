@@ -180,7 +180,7 @@ def load_ref_report(refname):
             print("[WARNING] -> The file %s doesn't contain the expected key" %(a_file))
     return lst2ret
 
-def get_unfinished_cores(refname):
+def get_finished_cores(refname):
     files_list = os.listdir(Path(os.path.dirname(__file__)).resolve())
     files_list = [out for out in files_list if not os.path.isdir(out)]
     files_list = [out.split(".")[0].split("_")[-1] for out in files_list if refname in out]
@@ -249,7 +249,17 @@ def main():
     else:
         raise ValueError("Unknown option for the argument --half_procs, accepted values -1, 0, 1")
     if(args.continueProcessing):
-        lst_cores_ok = get_unfinished_cores(args.refname)
+        lst_cores_ok = get_finished_cores(args.refname)
+        lst_cores2work = []
+        lck = True 
+        cntr = 0
+        while (lck):
+            if cntr in lst_cores_ok:
+                cntr  = cntr + 1 
+            else: 
+                lst_cores2work.append(cntr)
+            if(len(lst_cores2work) >= args.cores):
+                lck= False
     else:
         lst_cores_ok = range(args.cores)
 
@@ -268,7 +278,7 @@ def main():
             batches = get_batches(lst_files, args.cores)
         else:
             batches = continue_exp_with_files(lst_files, args.refname)
-            batches = get_batches(batches, len(lst_cores_ok))
+            batches = get_batches(batches, args.cores)
             print("  -> Final batches after verification: %i" %(len(batches)))
         p_list = []
         # fit threats 
