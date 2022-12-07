@@ -207,8 +207,6 @@ def continue_exp_with_files(lst_files, refname):
         else:
             files2batch.append(os.path.join(base_path, "%s.txt" %(a_file)))
     print("  -> Found unprocessed files: %i" %(len(files2batch)))
-    print(files2batch)
-    sys.exit()
     return files2batch
 
 
@@ -269,8 +267,9 @@ def main():
             batches = get_batches(batches, args.cores)
         p_list = []
         # fit threats 
+        cntr = -1
         for idx_core in range(args.cores):
-            if(idx_core>len(batches)):
+            if(cntr>len(batches)):
                 print(" -> No batch for the actual core %i" %(idx_core))
                 continue
             else:
@@ -281,8 +280,12 @@ def main():
                         continue
                     else:
                         print(" -> Continue process with core: %i" %(idx_core))
-                p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
-                p_list.append(p)
+                        p = Process(target=get_pointcloud_general_characteristics, args=(batches[cntr], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                        p_list.append(p)
+                        cntr = cntr + 1
+                else:
+                    p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                    p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
         for a_proc in p_list:
