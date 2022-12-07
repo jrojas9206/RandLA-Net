@@ -255,9 +255,11 @@ def main():
         cntr = 0
         while (lck):
             if cntr in lst_cores_ok:
-                cntr  = cntr + 1 
+                cntr  = cntr + 1
+                continue 
             else: 
                 lst_cores2work.append(cntr)
+                cntr  = cntr + 1
             if(len(lst_cores2work) >= args.cores):
                 lck= False
         lst_cores_ok = lst_cores2work
