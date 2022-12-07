@@ -268,23 +268,23 @@ def main():
             print("  -> Final batches after verification: %i" %(len(batches)))
         p_list = []
         # fit threats 
-        cntr = -1
-        for idx_core in range(args.cores):
+        cntr = 0
+        if(args.continueProcessing):
+            lst_cores_ok = get_unfinished_cores(args.refname)
+        else:
+            lst_cores_ok = range(args.cores)
+        for idx_core in lst_cores_ok:
             if(cntr>len(batches)):
                 print(" -> No batch for the actual core %i" %(idx_core))
                 continue
             else:
                 if(args.continueProcessing):
-                    lst_cores_ok = get_unfinished_cores(args.refname)
-                    if(idx_core in lst_cores_ok):
-                        print(" -> core %i already finished" %(idx_core))
-                        continue
-                    else:
-                        print(" -> Continue process with core: %i" %(idx_core))
-                        p = Process(target=get_pointcloud_general_characteristics, args=(batches[cntr], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
-                        p_list.append(p)
-                        cntr = cntr + 1
+                    print(" -> Continue process with core: %i" %(idx_core))
+                    p = Process(target=get_pointcloud_general_characteristics, args=(batches[cntr], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                    p_list.append(p)
+                    cntr = cntr + 1
                 else:
+                    print(" -> Starting process with core: %i" %(idx_core))
                     p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
                     p_list.append(p)
         for a_proc in p_list:
