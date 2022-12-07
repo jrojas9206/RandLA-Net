@@ -201,7 +201,13 @@ def continue_exp_with_files(lst_files, refname):
     print("   -> Found processed files: %i" %(len(found_proc_files)))
     print(found_proc_files)
     print(lst_of_files)
-    files2batch = [out for out in found_proc_files if out not in lst_of_files]
+    files2batch = []
+    for a_file in lst_of_files:
+        if(a_file in found_proc_files):
+            print(a_file, found_proc_files[0])
+            continue
+        else:
+            files2batch.append(a_file)
     print("  -> Found unprocessed files: %i" %(len(files2batch)))
     return files2batch
 
