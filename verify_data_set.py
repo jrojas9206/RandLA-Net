@@ -207,6 +207,8 @@ def continue_exp_with_files(lst_files, refname):
         else:
             files2batch.append(os.path.join(base_path, "%s.txt" %(a_file)))
     print("  -> Found unprocessed files: %i" %(len(files2batch)))
+    print(files2batch)
+    sys.exit()
     return files2batch
 
 
