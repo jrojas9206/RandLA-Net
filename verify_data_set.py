@@ -265,6 +265,7 @@ def main():
         else:
             batches = continue_exp_with_files(lst_files, args.refname)
             batches = get_batches(batches, args.cores)
+            print("  -> Final batches after verification: %i" %(len(batches)))
         p_list = []
         # fit threats 
         cntr = -1
