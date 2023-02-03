@@ -165,6 +165,51 @@ def merge_dictionaries(ref=""):
                     merged_dict[a_key] = dict_report[a_key]
     return merged_dict
 
+def load_ref_report(refname):
+    files_list = os.listdir(Path(os.path.dirname(__file__)).resolve())
+    files_list = [out for out in files_list if not os.path.isdir(out)]
+    files_list = [out for out in files_list if refname in out]
+    lst2ret = []
+    print("  -> Found referenced reports: %i" %(len(files_list)))
+    for a_file in files_list:
+        with open(a_file, "r") as a_report:
+            data = json.load(a_report)  
+        if("names" in data.keys()):
+            lst2ret = lst2ret + data["names"]
+        else:
+            print("[WARNING] -> The file %s doesn't contain the expected key" %(a_file))
+    return lst2ret
+
+def get_finished_cores(refname):
+    files_list = os.listdir(Path(os.path.dirname(__file__)).resolve())
+    files_list = [out for out in files_list if not os.path.isdir(out)]
+    files_list = [out.split(".")[0].split("_")[-1] for out in files_list if refname in out]
+    correct_cores = []
+    for a_file in files_list:
+        a_core = a_file.split(".")[0].split("_")[-1]
+        try:
+            correct_cores.append(int(a_core))
+        except ValueError as err:
+            print("    -> report name in a unexpected format: %s" %(a_file))
+    return correct_cores
+
+
+def continue_exp_with_files(lst_files, refname):
+    base_path = Path(lst_files[0]).parent
+    print("-> Looking for not processed files")
+    lst_of_files = [os.path.split(out)[-1].split(".")[0] for out in lst_files]
+    found_proc_files = load_ref_report(refname)
+    print("   -> Found processed files: %i" %(len(found_proc_files)))
+    files2batch = []
+    for a_file in lst_of_files:
+        if(a_file in found_proc_files):
+            continue
+        else:
+            files2batch.append(os.path.join(base_path, "%s.txt" %(a_file)))
+    print("  -> Found unprocessed files: %i" %(len(files2batch)))
+    return files2batch
+
+
 def main():
     parser = argparse.ArgumentParser("Verify the numper of points of the dataset")
     parser.add_argument("path2pointclouds", type=str, help=" ")
@@ -180,6 +225,7 @@ def main():
     parser.add_argument("--half_procs", type=int, help="Process the first hald or the second hald of the dataset, -1 process all, 0 to process the first half\
                                                        1 to process the second half, default:-1", default=-1)
     parser.add_argument("--refname", type=str, help="Reference name for the reports", default="ref")
+    parser.add_argument("--continueProcessing", help="Continue the analysis that was running", action="store_true")
     args = parser.parse_args()
     start_time = datetime.now()
     # Verify that the paths exist 
@@ -202,6 +248,23 @@ def main():
         print(" -> selected half length: %i" %(len(lst_files)))
     else:
         raise ValueError("Unknown option for the argument --half_procs, accepted values -1, 0, 1")
+    if(args.continueProcessing):
+        lst_cores_ok = get_finished_cores(args.refname)
+        lst_cores2work = []
+        lck = True 
+        cntr = 0
+        while (lck):
+            if cntr in lst_cores_ok:
+                cntr  = cntr + 1
+                continue 
+            else: 
+                lst_cores2work.append(cntr)
+                cntr  = cntr + 1
+            if(len(lst_cores2work) >= args.cores):
+                lck= False
+        lst_cores_ok = lst_cores2work
+    else:
+        lst_cores_ok = range(args.cores)
 
     if(len(lst_files)>0):
         print("-> Found point clouds: %s" %(len(lst_files)))
@@ -214,12 +277,29 @@ def main():
             json.dump(dic2save, outfile)
     else:
         # Get batches, 
-        batches = get_batches(lst_files, args.cores)
+        if(not args.continueProcessing):
+            batches = get_batches(lst_files, args.cores)
+        else:
+            batches = continue_exp_with_files(lst_files, args.refname)
+            batches = get_batches(batches, args.cores)
+            print("  -> Final batches after verification: %i" %(len(batches)))
         p_list = []
         # fit threats 
-        for idx_core in range(args.cores):
-            p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
-            p_list.append(p)
+        cntr = 0
+        for idx_core in lst_cores_ok:
+            if(cntr>len(batches)):
+                print(" -> No batch for the actual core %i" %(idx_core))
+                continue
+            else:
+                if(args.continueProcessing):
+                    print(" -> Continue process with core: %i" %(idx_core))
+                    p = Process(target=get_pointcloud_general_characteristics, args=(batches[cntr], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                    p_list.append(p)
+                    cntr = cntr + 1
+                else:
+                    print(" -> Starting process with core: %i" %(idx_core))
+                    p = Process(target=get_pointcloud_general_characteristics, args=(batches[idx_core], args.annColumn, args.radius, idx_core, args.only_npoints, args.refname))
+                    p_list.append(p)
         for a_proc in p_list:
             a_proc.start()
         for a_proc in p_list:
