@@ -16,9 +16,15 @@ def merge_pointCloudAndLabels(input_dir, label_dir, output_dir):
 
         npy_filename = data_filename[:-3] + 'npy'
         if os.path.exists(npy_filename):
-            data = numpy.load(npy_filename)
+            try:
+                data = numpy.load(npy_filename)
+            except ValueError as err:
+                data = numpy.load(npy_filename, delimiter=",")
         else:
-            data = numpy.loadtxt(data_filename)
+            try:
+                data = numpy.loadtxt(data_filename)
+            except ValueError as err:
+                data = numpy.loadtxt(data_filename, delimiter=",")
             numpy.save(npy_filename, data)
 
         label = numpy.loadtxt(filename)
