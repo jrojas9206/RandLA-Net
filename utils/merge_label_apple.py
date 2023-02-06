@@ -29,6 +29,8 @@ def merge_pointCloudAndLabels(input_dir, label_dir, output_dir):
 
         label = numpy.loadtxt(filename)
         print("Number of apple point : ", numpy.count_nonzero(label))
+        print("Total number of points: ", data.shape[0])
+        print("  -> Percentage: ", numpy.count_nonzero(label)/data.shape[0])
         x = numpy.column_stack([data[:, 0:3], label])
 
         output_filename = os.path.join(output_dir, basename + '.txt')
