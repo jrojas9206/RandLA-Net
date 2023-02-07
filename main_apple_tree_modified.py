@@ -466,6 +466,7 @@ def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     cfg.lr_decays = {i: parameters["lr_decay"] for i in range(0, parameters["epoch"])}
     cfg.max_epoch = parameters["epoch"]
     cfg.train_steps = parameters["steps"]
+    cfg.num_points = parameters["s_point"]
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes", inputDir, parameters=parameters)
 
@@ -481,11 +482,13 @@ if __name__ == '__main__':
     parser.add_argument("--lr_decay", type=float, help="Decay step of the learning rate", default=0.95)
     parser.add_argument("--epochs", type=int, help="Epochs", default=500)
     parser.add_argument("--steps", type=int, help="Steps per epoch", default=100)
+    parser.add_argument("--sub_points", type=int, help="Subsample points", default=9800)
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
              "outputDir": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain,
-             "lr": args.learning_rate, "lr_decay": args.lr_decay, "epoch":args.epochs, "steps": args.steps} 
+             "lr": args.learning_rate, "lr_decay": args.lr_decay, "epoch":args.epochs, "steps": args.steps,
+             "s_point":args.sub_points} 
     print("-> RandLA-NET")
     print(" -> GPU[ID]: %i" %args.gpu)
     print(" -> Mode[train/test/vis]: %s" %args.mode)
