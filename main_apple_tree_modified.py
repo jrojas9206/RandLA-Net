@@ -462,6 +462,10 @@ def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
         os.mkdir(path2save_log)
     cfg.saving_path = outputDir
     cfg.train_sum_dir = path2save_log
+    cfg.learning_rate = parameters["lr"]
+    cfg.lr_decays = {i: parameters["lr_decay"] for i in range(0, parameters["epoch"])}
+    cfg.max_epoch = parameters["epoch"]
+    cfg.train_steps = parameters["steps"]
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes", inputDir, parameters=parameters)
 
@@ -473,10 +477,15 @@ if __name__ == '__main__':
     parser.add_argument("--outputDir", type=str, help="Path to the output folder", default="./output/")
     parser.add_argument("--protocol", type=str, help="Measurement protocol /synthetic/ffield_only_xyz/field", default="synthetic")
     parser.add_argument("--restoreTrain", help="Restore training True/False", action="store_true")
+    parser.add_argument("--learning_rate", type=float, help="Initial learning rate", default=0.001)
+    parser.add_argument("--lr_decay", type=float, help="Decay step of the learning rate", default=0.95)
+    parser.add_argument("--epochs", type=int, help="Epochs", default=500)
+    parser.add_argument("--steps", type=int, help="Steps per epoch", default=100)
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
-             "outputDir": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain} 
+             "outputDir": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain,
+             "lr": args.learning_rate, "lr_decay": args.lr_decay, "epoch":args.epochs, "steps": args.steps} 
     print("-> RandLA-NET")
     print(" -> GPU[ID]: %i" %args.gpu)
     print(" -> Mode[train/test/vis]: %s" %args.mode)
