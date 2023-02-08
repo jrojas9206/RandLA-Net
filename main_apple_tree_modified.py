@@ -467,6 +467,8 @@ def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     cfg.max_epoch = parameters["epoch"]
     cfg.train_steps = parameters["steps"]
     cfg.num_points = parameters["s_point"]
+    cfg.batch_size = parameters["batch_sz"]
+    cfg.val_batch_size = parameters["batchVal_sz"]
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes", inputDir, parameters=parameters)
 
@@ -483,12 +485,14 @@ if __name__ == '__main__':
     parser.add_argument("--epochs", type=int, help="Epochs", default=500)
     parser.add_argument("--steps", type=int, help="Steps per epoch", default=100)
     parser.add_argument("--sub_points", type=int, help="Subsample points", default=9800)
+    parser.add_argument("--batch_size", type=int, help="Batch size to train, default:8", default=8)
+    parser.add_argument("--batchVal_sz", type=int, help="Batch Size for the test, default:32", default=32)
     args = parser.parse_args()
     # Parameters copy to be able to use launch_training in other projects 
     param = {"gpu":args.gpu, "mode":args.mode, "model_path":args.model_path, "path2data":args.inputDir, 
              "outputDir": args.outputDir, "protocol":args.protocol, "restoreTrain":args.restoreTrain,
              "lr": args.learning_rate, "lr_decay": args.lr_decay, "epoch":args.epochs, "steps": args.steps,
-             "s_point":args.sub_points} 
+             "s_point":args.sub_points, "valBatch":args.batchVal_sz, "batch_sz": args.batch_size} 
     print("-> RandLA-NET")
     print(" -> GPU[ID]: %i" %args.gpu)
     print(" -> Mode[train/test/vis]: %s" %args.mode)
