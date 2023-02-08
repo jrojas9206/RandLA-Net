@@ -468,7 +468,7 @@ def train_synthetic_HiHiRes(inputDir, outputDir, parameters=None):
     cfg.train_steps = parameters["steps"]
     cfg.num_points = parameters["s_point"]
     cfg.batch_size = parameters["batch_sz"]
-    cfg.val_batch_size = parameters["batchVal_sz"]
+    cfg.val_batch_size = parameters["valBatch"]
     print(cfg.saving_path, flush=True)    
     launch_training("synthetic_HiHiRes", inputDir, parameters=parameters)
 
