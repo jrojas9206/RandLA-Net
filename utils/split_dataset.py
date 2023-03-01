@@ -54,7 +54,9 @@ def split_my_dataset(args):
                                         as_npy=args.saveAsnpy, 
                                         merge_instance=args.merge_instance, 
                                         label_column=args.label_column, 
-                                        remove_label=args.remove_label)
+                                        remove_label=args.remove_label,
+                                        npoints=args.npoints,
+                                        removeCols=None if args.removeColumns is None else [int(i) for i in args.removeCols.split(',')])
         else:
             batches = split_on_batches_per_core(a_data, args.cores)
             list_process = []
@@ -65,7 +67,10 @@ def split_my_dataset(args):
                                                                      args.saveAsnpy, 
                                                                      args.merge_instance, 
                                                                      args.label_column, 
-                                                                     args.remove_label))
+                                                                     args.remove_label, 
+                                                                     args.npoints,
+                                                                     None if args.removeColumns is None else [int(i) for i in args.removeCols.split(',')],
+                                                                     ))
                 list_process.append(p)
             for a_process in list_process:
                 a_process.start()
@@ -93,9 +98,10 @@ def split_on_batches_per_core(data_list, number_of_cores):
         lst2return.append(tmp_list)
     return lst2return
 
-def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, merge_instance=False, label_column=3, remove_label=False):
+def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, merge_instance=False, label_column=3, remove_label=False, npoints=90e3, removeCols=None):
     """
     """
+    procFiles = 0
     for idx, a_file in enumerate(data_list, start=1):
         file_name_ref = os.path.split(a_file)[-1]
         if(as_npy or merge_instance or remove_label):
@@ -108,15 +114,22 @@ def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, mer
                 actual_point_cloud = np.loadtxt(a_file)
             except:
                 actual_point_cloud = np.loadtxt(a_file, delimiter=",")
+            if(actual_point_cloud.shape[0]<=npoints):
+                continue
             if(merge_instance and not remove_label):
-                index2change = np.where(actual_point_cloud[:,label_column]>0)
+                index2change = np.where(actual_point_cloud[:,label_column]!=3)
+                actual_point_cloud[index2change, label_column] = 0
+                index2change = np.where(actual_point_cloud[:,label_column]==3)
                 actual_point_cloud[index2change, label_column] = 1
+            if(removeCols is not None):
+                actual_point_cloud = np.delete(actual_point_cloud, removeCols, axis=1)
             if(remove_label):
                 actual_point_cloud = actual_point_cloud[:, 0:3]
             if(as_npy):
                 np.save(new_pos, actual_point_cloud)
             else:
                 np.savetxt(new_pos, actual_point_cloud, delimiter=",", fmt="%.6f")
+            procFiles += 1
         else:
             new_pos = os.path.join(output_path, file_name_ref)
             if(ref==-1):
@@ -124,7 +137,9 @@ def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, mer
             else:
                 print("-Copying[%i/%i][core:%i]: %s" %(idx, len(data_list), ref, "%s.%s" %(file_name_ref.split(".")[0], "npy" if as_npy else "txt")))
             copy(a_file, new_pos)
-    return 0
+            procFiles +=1
+    print(" >>The total number of processed files was: %i" %(procFiles))
+    return procFiles
 
 def main():
     parser = argparse.ArgumentParser("Split dataset", "Verify the files in a folder and split them in train and test")
@@ -138,6 +153,9 @@ def main():
     parser.add_argument("--label_column", type=int, help="Column with the instance annotations, default:3", default=3)
     parser.add_argument("--remove_label", help="Remove the label from the point clouds", action="store_true")
     parser.add_argument("--cores", type=int, help="Number of cores to achieve the desired task, if -1 is set all the cores are going to be used, default:1", default=1)
+    parser.add_argument("--npoints", type=int, help="Only take the pointclouds with equal or higher number of points. default: 90000", default=90e3)
+    parser.add_argument("--removeCols", type=str, help="Remove undesired columns, default: 3,4,5", default="3,4,5")
+    parser.add_argument("--removeColumns", help="Remove the columns defined on removeCols", action="store_true")
     args = parser.parse_args()
 
     folder_stat = verify_folders(args)
