@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 import numpy
 import os
 import glob
@@ -241,6 +240,22 @@ def prepare_data_generic(path2data, path2output, grid_size=0.001, verbose=False,
         else:
             raise ValueError("ERROR: Unknown option - %s" %dataset)
     
+def prepare_several_sets(args):
+    experiment_folders = [a_obj for a_obj in os.listdir(args.inputDir) if(os.path.isdir(os.path.join(args.inputDir, a_obj)))]
+    for a_experiment in experiment_folders:
+        data_folder = os.path.join(args.inputDir, a_experiment, args.whrootbase)
+        for dataset_type in [a_set for a_set in args.whfolders.split(',')]:
+            print(" -> Working on: %s" %(os.path.join(a_experiment, args.whrootbase, dataset_type)))
+            prepare_data_generic(data_folder, 
+                                args.outputDir, 
+                                grid_size=args.gridSize, 
+                                verbose=args.verbose, 
+                                protocol=args.ExpProtocol, 
+                                dataset=dataset_type, 
+                                annCol=args.annColumn, 
+                                colorCol=[int(a_feature) for a_feature in args.featureCols.split(',')]
+                                )
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Prepare the point clouds for the randlanet model")
     parser.add_argument("inputDir", type=str, help="Path to the directory with the point clouds")
@@ -251,10 +266,22 @@ if __name__ == "__main__":
     parser.add_argument("--datasetType", type=str, help="Part of the dataset that is going to be processed, train or test. Default=train", default="train")
     parser.add_argument("--annColumn", type=int, help="Column with the annotated labels, default=6", default=6)
     parser.add_argument("--featureCols", type=str, help="Column Id of the point features, default = [3,4,5]", default="3,4,5")
+    parser.add_argument("--wholedataset", help="Process a group of dataset with the defined structure on the wh options", action="store_true")
+    parser.add_argument("--whfolders", type=str, help="main folders to process", default="training,test")
+    parser.add_argument("--whrootbase", type=str,help="Define the base folder that contain the whfolders, default: root", default="root")
     args = parser.parse_args()
     print("-> Prepare data to randlanet model")
     feature_col = args.featureCols.split(",")
     feature_col = [ int(i) for i in feature_col ]
+<<<<<<< HEAD
     prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, 
                          verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType, 
                          annCol=args.annColumn, colorCol=feature_col)
+=======
+    if(not args.wholedataset):
+        prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, verbose=args.verbose, 
+                            protocol=args.ExpProtocol, dataset=args.datasetType, annCol=args.annColumn, 
+                            colorCol=feature_col)
+    else:
+        prepare_several_sets(args)
+>>>>>>> 28e2d7938f33535ad66e41b4209defb323e14b7e
