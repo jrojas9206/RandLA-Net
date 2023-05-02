@@ -255,4 +255,6 @@ if __name__ == "__main__":
     print("-> Prepare data to randlanet model")
     feature_col = args.featureCols.split(",")
     feature_col = [ int(i) for i in feature_col ]
-    prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType, annCol=args.annColumn, colorCol=feature_col)
+    prepare_data_generic(args.inputDir, args.outputDir, grid_size=args.gridSize, 
+                         verbose=args.verbose, protocol=args.ExpProtocol, dataset=args.datasetType, 
+                         annCol=args.annColumn, colorCol=feature_col)
