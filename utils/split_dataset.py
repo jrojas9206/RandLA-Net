@@ -98,7 +98,7 @@ def split_on_batches_per_core(data_list, number_of_cores):
         lst2return.append(tmp_list)
     return lst2return
 
-def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, merge_instance=False, label_column=3, remove_label=False, npoints=90e3, removeCols=None):
+def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, merge_instance=False, label_column=3, remove_label=False, npoints=90e3, removeCols=None, removeColumns=False):
     """
     """
     procFiles = 0
@@ -117,11 +117,11 @@ def separate_data_into_folders(data_list, output_path, ref=-1, as_npy=False, mer
             if(actual_point_cloud.shape[0]<=npoints):
                 continue
             if(merge_instance and not remove_label):
-                index2change = np.where(actual_point_cloud[:,label_column]!=3)
-                actual_point_cloud[index2change, label_column] = 0
-                index2change = np.where(actual_point_cloud[:,label_column]==3)
+                # index2change = np.where(actual_point_cloud[:,label_column]==0)
+                # actual_point_cloud[index2change, label_column] = 0
+                index2change = np.where(actual_point_cloud[:,label_column]!=0)
                 actual_point_cloud[index2change, label_column] = 1
-            if(removeCols is not None):
+            if(removeColumns):
                 actual_point_cloud = np.delete(actual_point_cloud, removeCols, axis=1)
             if(remove_label):
                 actual_point_cloud = actual_point_cloud[:, 0:3]
