@@ -103,7 +103,7 @@ def load_pointcloud(ifileName):
 def prepare_point_clouds(filesList, path2out="out", gridsize=0.001, 
                          verbose=True, train=True, experiment="field",
                          useReflectance=[1,1,1], annotation_available=True,
-                         debug=False):
+                         unitTest=False):
     """
         Load the point clouds and generate their KDtree and pyl versions
 
@@ -116,7 +116,7 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
                                 'field_only_xyz' - For LiDAR point clouds - return the processing of XYZ + Annotations [If train is ture]
                                 'synthetic' - For simulated LiDAR Point clouds - Return the processing of XYZ + Annatotions [if train is true]
         :param annotation_available: bool, If true labels are take into account for the processing
-        :param debug: bool, if True, a dictionary with all the possible outputs will be returned for verification 
+        :param unitTest: bool, if True, a dictionary with all the possible outputs will be returned for verification 
         :return: int
             O if all is fine 
            -1 if there is a problem 
@@ -150,6 +150,9 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
             print("-x Folder already exist %s" %(subfolder_train_test))
     else:
         print("  -> Subfolder for the pointclouds on pyl format already exist")
+    # Prepare the variables for the test 
+    if unitTest:
+        unitResults = {}
     # Loading and processing point clouds 
     for idx, a_file in enumerate(filesList, start=1): 
         if verbose:
@@ -158,6 +161,9 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
         pointcloud_ply = "%s.ply" %(pointcloud_name.split('.')[0])
         pointcloud = load_pointcloud(a_file)
         points = pointcloud[:, 0:3] # XYZ
+        if unitTest:
+            unitResults["original"] = pointcloud
+            unitResults["labelsOk"] = annotation_available
         # Set labels for training and test 
         if train and annotation_available:
             lables = pointcloud[:, -1].astype(np.uint8) # Points annotation 
@@ -192,7 +198,11 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
                 print("        -> Label[lenght - values]: %i - %s" %(lables.shape[0], str(np.unique(lables))))
         # Write PLY files
         folder2ply = os.path.join(subfolder_train_test, pointcloud_ply)
-        helper_ply.write_ply(folder2ply, [points, color2ply], ply_fields)
+        if unitTest:
+            unitResults["ply"] = np.concatenate( [points, color2ply], axis=1 )
+        else:
+            helper_ply.write_ply(folder2ply, [points, color2ply], ply_fields)
+
         # Subsample pointcloud and write new PLY file 
         folder2ply_subsampled_pointcloud = os.path.join(subfolder_extra_files, pointcloud_ply)
         subsampled_points, subsampled_colors = DP.grid_sub_sampling(points, # Point cloud XYZ
@@ -202,21 +212,35 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
         if verbose:
             print("    -> Pointcloud subsampled: %s" %(str(subsampled_points.shape)))
             print("    -> Colors subsampled: %s" %(str(subsampled_colors.shape)))
-        helper_ply.write_ply(folder2ply_subsampled_pointcloud,
+        if unitTest:
+            unitResults["plySubSampled"] = np.concatenate([subsampled_points, subsampled_colors], axis=1)
+        else: 
+            helper_ply.write_ply(folder2ply_subsampled_pointcloud,
                              [subsampled_points, subsampled_colors],
                              ply_fields)
         # Get and write KDtree
         folder2kdtree = os.path.join(subfolder_extra_files, "%s_KDTree.pkl" %(pointcloud_name.split('.')[0]))
         search_tree = sklearn.neighbors.KDTree(subsampled_points,
                                                leaf_size=50)
-        with open(folder2kdtree, "wb") as f:
-            pickle.dump(search_tree, f)
+        if not unitTest:
+            with open(folder2kdtree, "wb") as f:
+                pickle.dump(search_tree, f)
         # 
         folder2project_pointcloud = os.path.join(subfolder_extra_files, "%s_proj.pkl" %(pointcloud_name.split('.')[0]))
         projected_pointcloud_idx = np.squeeze(search_tree.query(points, return_distance=False))
         projected_pointcloud_idx = projected_pointcloud_idx.astype(np.int32)
-        with open(folder2project_pointcloud, "wb") as f:
-            pickle.dump([projected_pointcloud_idx, lables], f)
+        if not unitTest:
+            with open(folder2project_pointcloud, "wb") as f:
+                pickle.dump([projected_pointcloud_idx, lables], f)
+        
+        if unitTest:
+            return unitResults
+
+def unitTest2run(dic2evaluate):
+    """
+        Verify the output of the function prepare point cloud
+    """
+    return 0
 
 def main():
     parser = argparse.ArgumentParser("Prepare apple tree LiDAR point cloud to RandLA-NET")
@@ -248,7 +272,9 @@ def main():
 
     pointcloud_file_list = glob.glob(os.path.join(args.path2data, "*.%s" %(args.fileExtension)))
 
-    if args.cores == 1 or args.runUnitTest: 
+    if(args.runUnitTest):
+        unitTest2run(args)
+    if args.cores == 1:
         prepare_point_clouds(filesList = pointcloud_file_list,
                             path2out = args.path2out,
                             gridsize = args.gridSize,
