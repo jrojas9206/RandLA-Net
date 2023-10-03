@@ -176,7 +176,7 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
             if annotation_available and train:
                 color2ply = (normalize(pointcloud[:, 3:pointcloud.shape[1]-1],
                                   selection=useReflectance)*255).astype(np.uint8) 
-            else:
+            else:# test
                 if annotation_available:
                     color2ply = (normalize(pointcloud[:, 3:pointcloud.shape[1]-1],
                                   selection=useReflectance)*255).astype(np.uint8)
@@ -186,7 +186,10 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
         else:
             raise ValueError("Uknown experiment options: %s" %(experiment))
         # Ply standard column names
-        ply_fields = ['x', 'y', 'z', 'red', 'green', 'blue']
+        if train:
+            ply_fields = ['x', 'y', 'z', 'red', 'green', 'blue', "class"]
+        else:
+            ply_fields = ['x', 'y', 'z', 'red', 'green', 'blue']
         if verbose:
             print("    -> File name: %s" %(pointcloud_name))
             print("      -> Shape: %s" %(str(pointcloud.shape)))
@@ -201,12 +204,22 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
         if unitTest:
             unitResults["ply"] = np.concatenate( [points, color2ply], axis=1 )
         else:
-            helper_ply.write_ply(folder2ply, [points, color2ply], ply_fields)
+            if train:
+                helper_ply.write_ply(folder2ply, [points, color2ply, lables], ply_fields)
+            else:
+                helper_ply.write_ply(folder2ply, [points, color2ply], ply_fields)
 
         # Subsample pointcloud and write new PLY file 
         folder2ply_subsampled_pointcloud = os.path.join(subfolder_extra_files, pointcloud_ply)
-        subsampled_points, subsampled_colors = DP.grid_sub_sampling(points, # Point cloud XYZ
-                                                                    color2ply,  # Colors | Reflectances
+        if train:
+            subsampled_points, subsampled_colors, subsampled_labels = DP.grid_sub_sampling(points, # Point cloud XYZ
+                                                                    features=color2ply,  # Colors | Reflectances
+                                                                    labels=lables, # Annotations 
+                                                                    grid_size=gridsize) # Voxel size    
+            subsampled_labels = np.squeeze(subsampled_labels)         
+        else:
+            subsampled_points, subsampled_colors = DP.grid_sub_sampling(points, # Point cloud XYZ
+                                                                    features=color2ply,  # Colors | Reflectances
                                                                     grid_size=gridsize) # Voxel size 
         subsampled_colors = subsampled_colors/255.0
         if verbose:
@@ -215,7 +228,12 @@ def prepare_point_clouds(filesList, path2out="out", gridsize=0.001,
         if unitTest:
             unitResults["plySubSampled"] = np.concatenate([subsampled_points, subsampled_colors], axis=1)
         else: 
-            helper_ply.write_ply(folder2ply_subsampled_pointcloud,
+            if train:
+                helper_ply.write_ply(folder2ply_subsampled_pointcloud,
+                             [subsampled_points, subsampled_colors, subsampled_labels],
+                             ply_fields)
+            else:
+                helper_ply.write_ply(folder2ply_subsampled_pointcloud,
                              [subsampled_points, subsampled_colors],
                              ply_fields)
         # Get and write KDtree
@@ -283,7 +301,7 @@ def main():
                             experiment = args.experiment,
                             useReflectance = activate_reflectance,
                             annotation_available = not args.no_annotations_available,  
-                            debug=args.runUnitTest)
+                            unitTest=args.runUnitTest)
     elif args.cores > 1:
         chunks = np.array_split(pointcloud_file_list, args.cores)
         with Pool(args.cores) as p:
